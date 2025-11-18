@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 
 from data import CustomDatasetMany
 from utile import BOARD_SIZE
-from networks_00000 import LSTMs
+from networks_2100078 import LSTMs
 
 
 if torch.cuda.is_available():
