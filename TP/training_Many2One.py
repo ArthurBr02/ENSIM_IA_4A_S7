@@ -1,9 +1,13 @@
 import torch
 from torch.utils.data import DataLoader
+from torch.nn.modules.rnn import LSTM
+from torch.nn.modules.linear import Linear
 
 from data import CustomDatasetMany
 from utile import BOARD_SIZE
 from networks_2100078 import LSTMs
+
+torch.serialization.add_safe_globals([LSTMs, LSTM, Linear])
 
 
 if torch.cuda.is_available():
@@ -20,7 +24,7 @@ dataset_conf={}
 dataset_conf["filelist"]="train.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
-dataset_conf["path_dataset"]="../dataset/"
+dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=1000
 
 print("Training Dataste ... ")
@@ -32,7 +36,7 @@ dataset_conf={}
 dataset_conf["filelist"]="dev.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
-dataset_conf["path_dataset"]="../dataset/"
+dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=1000
 
 print("Development Dataste ... ")
@@ -42,11 +46,11 @@ devSet = DataLoader(ds_dev, batch_size=dataset_conf['batch_size'])
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=200
+conf['epoch']=400
 conf["earlyStopping"]=20
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
-conf["LSTM_conf"]["hidden_dim"]=128
+conf["LSTM_conf"]["hidden_dim"]=256
 
 model = LSTMs(conf).to(device)
 opt = torch.optim.Adam(model.parameters(), lr=0.005)
