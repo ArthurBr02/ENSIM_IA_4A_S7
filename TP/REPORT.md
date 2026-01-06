@@ -1,3 +1,12 @@
+## Consignes pour les données
+Des données et modèles sont fournis mais notre objectif est de faire mieux que ce qui est donné.
+60 états de plateau / actions jouées
+
+Problème de ML: Supervisé (dataset par un joueur professionnel), classification (sortie: plateau avec des probabilités dans les cases où on peut jouer)
+
+Matrice d'entrée : 60 x 8 x 8 (60 états de plateau)
+
+
 ## TODO
 
 Faire une map avec les différents paramètres à tester pour les différents modèles (MLP, LSTM, CNN, CNN + LSTM, Transformer, etc.)

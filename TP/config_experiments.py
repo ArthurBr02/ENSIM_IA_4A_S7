@@ -13,7 +13,8 @@ EXPERIMENT_CONFIG = {
     "batch_sizes": [32, 64, 128, 256],
     
     # Nombres d'époques à tester
-    "epochs": [10, 25, 50, 100],
+    # "epochs": [10, 25, 50, 100],
+    "epochs": [20],
     
     # Architectures spécifiques pour chaque type de modèle
     "architectures": {
@@ -40,11 +41,8 @@ EXPERIMENT_CONFIG = {
             # Nombre de couches LSTM
             "num_layers": [1, 2, 3],
             # Taux de dropout
-            "dropout": [0.0, 0.2, 0.3, 0.5],
-            # LSTM bidirectionnel ou non
-            "bidirectional": [False, True]
+            "dropout": [0.0, 0.2, 0.3, 0.5]
         },
-        
         "CNN": {
             # Configurations de filtres (nombre de canaux par couche)
             "filters": [
@@ -145,7 +143,6 @@ BASELINE_CONFIG = {
         "hidden_size": 128,
         "num_layers": 2,
         "dropout": 0.3,
-        "bidirectional": False,
         "optimizer": "Adam",
         "learning_rate": 0.001,
         "batch_size": 64,
@@ -281,9 +278,9 @@ if __name__ == "__main__":
     # Test de validation
     is_valid, errors = validate_config()
     if is_valid:
-        print("✓ Configuration valide")
+        print("Configuration valide")
     else:
-        print("✗ Erreurs dans la configuration:")
+        print("Erreurs dans la configuration:")
         for error in errors:
             print(f"  - {error}")
     

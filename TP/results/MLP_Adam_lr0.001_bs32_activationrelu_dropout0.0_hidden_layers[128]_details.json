@@ -1,0 +1,35 @@
+{
+  "experiment_id": "MLP_Adam_lr0.001_bs32_activationrelu_dropout0.0_hidden_layers[128]",
+  "timestamp": "2026-01-06T14:04:27.538137",
+  "model_type": "MLP",
+  "hyperparameters": {
+    "optimizer": "Adam",
+    "learning_rate": 0.001,
+    "batch_size": 32,
+    "epochs": 17
+  },
+  "architecture": {
+    "hidden_layers": [
+      128
+    ],
+    "dropout": 0.0,
+    "activation": "relu"
+  },
+  "model_info": {
+    "trainable_params": 33088
+  },
+  "results": {
+    "best_epoch": 7,
+    "train": {
+      "loss": 4.0662590013125,
+      "accuracy": 0.11881908570793756
+    },
+    "validation": {
+      "loss": 4.071165764001387,
+      "accuracy": 0.11433333333333333
+    },
+    "test": {}
+  },
+  "training_time_seconds": 226.79153609275818,
+  "notes": "Early stopped at epoch 17"
+}
