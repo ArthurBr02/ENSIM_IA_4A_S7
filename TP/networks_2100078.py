@@ -23,11 +23,22 @@ class MLP(nn.Module):
         """
         
         super(MLP, self).__init__()  
+
+        # conf={}
+        # conf["board_size"]=BOARD_SIZE
+        # conf["path_save"]="save_models"
+        # conf['epoch']=200
+        # conf["earlyStopping"]=20
+        # conf["len_inpout_seq"]=len_samples
+        # conf["LSTM_conf"]={}
+        # conf["LSTM_conf"]["hidden_dim"]=128
         
         self.board_size=conf["board_size"]
         self.path_save=conf["path_save"]+"_MLP/"
         self.earlyStopping=conf["earlyStopping"]
         self.len_inpout_seq=conf["len_inpout_seq"]
+
+        self.name = "MLP"
 
         # Define the layers of the MLP
         self.lin1 = nn.Linear(self.board_size*self.board_size, 128)
@@ -156,6 +167,8 @@ class LSTMs(nn.Module):
         """
         super(LSTMs, self).__init__()
         
+        self.name = "LSTM"
+
         self.board_size=conf["board_size"]
         self.path_save=conf["path_save"]+"_LSTM/"
         self.earlyStopping=conf["earlyStopping"]

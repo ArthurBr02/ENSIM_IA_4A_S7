@@ -5,6 +5,8 @@ from data import CustomDatasetOne
 from utile import BOARD_SIZE
 from networks_2100078 import MLP
 
+import time
+
 
 
 if torch.cuda.is_available():
@@ -43,7 +45,7 @@ devSet = DataLoader(ds_dev, batch_size=dataset_conf['batch_size'])
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=200
+conf['epoch']=20
 conf["earlyStopping"]=20
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
@@ -58,10 +60,12 @@ def count_parameters(model):
 n = count_parameters(model)
 print("Number of parameters: %s" % n)
 
+start_time = time.time()
 best_epoch=model.train_all(trainSet,
                        devSet,
                        conf['epoch'],
                        device, opt)
+print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"))
 
 # model = torch.load(conf["path_save"] + '/model_2.pt')
 # model.eval()
