@@ -34,6 +34,8 @@ Adam
 Adagrad
 SGD
 
+Tester de changer les layers du MLP (de Linear à autre chose)
+
 Faire un système pour exporter les métriques (accuracy, loss, etc.) dans des fichiers CSV ou JSON pour chaque modèle testé.
 
 Ajouter les learning rates à tester dans la map (0.0001, 0.001, 0.01, 0.1)
@@ -56,7 +58,7 @@ The result of your model’s performance based on accuracy for all tested archit
 At the end of TP course, you should present your work in 5 minutes as well
 
 ## Evaluation Chart
-[] Calculate and Compare the results of provided MLP and LSTM baseline
+[x] Calculate and Compare the results of provided MLP and LSTM baseline
 5
 
 [] Optimizing the architecture of MLP (reporting the number of trainable weights is necessary)

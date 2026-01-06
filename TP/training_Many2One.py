@@ -52,6 +52,7 @@ conf["earlyStopping"]=20
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=256
+conf["dropout"]=0.1
 
 model = LSTMs(conf).to(device)
 opt = torch.optim.Adam(model.parameters(), lr=0.005)

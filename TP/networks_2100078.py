@@ -12,7 +12,9 @@ import time
 def loss_fnc(predictions, targets):
     return nn.CrossEntropyLoss()(input=predictions,target=targets)
 
-
+"""
+[128],              # 1 couche
+"""
 class MLP(nn.Module):
     def __init__(self, conf):
         """
@@ -22,21 +24,13 @@ class MLP(nn.Module):
         - conf (dict): Configuration dictionary containing model parameters.
         """
         
-        super(MLP, self).__init__()  
-
-        # conf={}
-        # conf["board_size"]=BOARD_SIZE
-        # conf["path_save"]="save_models"
-        # conf['epoch']=200
-        # conf["earlyStopping"]=20
-        # conf["len_inpout_seq"]=len_samples
-        # conf["LSTM_conf"]={}
-        # conf["LSTM_conf"]["hidden_dim"]=128
+        super(MLP, self).__init__()
         
         self.board_size=conf["board_size"]
         self.path_save=conf["path_save"]+"_MLP/"
         self.earlyStopping=conf["earlyStopping"]
         self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
 
         self.name = "MLP"
 
@@ -44,7 +38,7 @@ class MLP(nn.Module):
         self.lin1 = nn.Linear(self.board_size*self.board_size, 128)
         self.lin2 = nn.Linear(128, 128)
         self.lin3 = nn.Linear(128, self.board_size*self.board_size)
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
         
     def forward(self, seq):
         """
@@ -67,94 +61,238 @@ class MLP(nn.Module):
         return F.softmax(outp, dim=-1)
     
     def train_all(self, train, dev, num_epoch, device, optimizer):
-        if not os.path.exists(f"{self.path_save}"):
-            os.mkdir(f"{self.path_save}")
-        best_dev = 0.0
-        dev_epoch = 0
-        notchange=0 # to manage earlystopping
-        train_acc_list=[]
-        dev_acc_list=[]
-        torch.autograd.set_detect_anomaly(True)
-        init_time=time.time()
-        for epoch in range(1, num_epoch+1):
-            start_time=time.time()
-            loss = 0.0
-            nb_batch =  0
-            loss_batch = 0
-            for batch, labels, _ in tqdm(train):
-                outputs =self(batch.float().to(device))
-                loss = loss_fnc(outputs,labels.clone().detach().float().to(device))
-                loss.backward()
-                optimizer.step()
-                optimizer.zero_grad()
-                nb_batch += 1
-                loss_batch += loss.item()
-            print("epoch : " + str(epoch) + "/" + str(num_epoch) + ' - loss = '+\
-                  str(loss_batch/nb_batch))
-            last_training=time.time()-start_time
-
-            self.eval()
-            
-            train_clas_rep=self.evalulate(train, device)
-            acc_train=train_clas_rep["weighted avg"]["recall"]
-            train_acc_list.append(acc_train)
-            
-            dev_clas_rep=self.evalulate(dev, device)
-            acc_dev=dev_clas_rep["weighted avg"]["recall"]
-            dev_acc_list.append(acc_dev)
-            
-            last_prediction=time.time()-last_training-start_time
-            
-            print(f"Accuracy Train:{round(100*acc_train,2)}%, Dev:{round(100*acc_dev,2)}% ;",
-                  f"Time:{round(time.time()-init_time)}",
-                  f"(last_train:{round(last_training)}sec, last_pred:{round(last_prediction)}sec)")
-
-            if acc_dev > best_dev or best_dev == 0.0:
-                notchange=0
-                
-                torch.save(self, self.path_save + '/model_' + str(epoch) + '.pt')
-                best_dev = acc_dev
-                best_epoch = epoch
-            else:
-                notchange+=1
-                if notchange>self.earlyStopping:
-                    break
-                
-            self.train()
-            
-            print("*"*15,f"The best score on DEV {best_epoch} :{round(100*best_dev,3)}%")
-
-        self = torch.load(self.path_save + '/model_' + str(best_epoch) + '.pt', weights_only=False)
-        self.eval()
-        _clas_rep = self.evalulate(dev, device)
-        print(f"Recalculing the best DEV: WAcc : {100*_clas_rep['weighted avg']['recall']}%")
-
-        
-        return best_epoch
-    
+        return train_all(self, train, dev, num_epoch, device, optimizer)
     
     def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[64],              # 1 couche
+"""
+class MLP_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
         
-        all_predicts=[]
-        all_targets=[]
+        super(MLP_64, self).__init__()
         
-        for data, target,_ in tqdm(test_loader):
-            output = self(data.float().to(device))
-            predicted=output.argmax(dim=-1).cpu().detach().numpy()
-            target=target.argmax(dim=-1).numpy()
-            for i in range(len(predicted)):
-                all_predicts.append(predicted[i])
-                all_targets.append(target[i])
-                           
-        perf_rep=classification_report(all_targets,
-                                      all_predicts,
-                                      zero_division=1,
-                                      digits=4,
-                                      output_dict=True)
-        perf_rep=classification_report(all_targets,all_predicts,zero_division=1,digits=4,output_dict=True)
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_64"
+
+        # Define the layers of the MLP
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 64)
+        self.lin2 = nn.Linear(64, 64)
+        self.lin3 = nn.Linear(64, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
         
-        return perf_rep
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = self.lin2(x)
+        outp = self.lin3(x)
+        return F.softmax(outp, dim=-1)
     
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[256, 128],              # 2 couches
+"""
+class MLP_256_128(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+        Architecture: Input(64) -> 128 -> 64 -> Output(64)
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        
+        super(MLP_256_128, self).__init__()
+        
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_256_128/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_256_128"
+
+        # Define the layers of the MLP: Input -> 128 -> 64 -> Output
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 256)
+        self.lin2 = nn.Linear(256, 128)
+        self.lin3 = nn.Linear(128, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = self.lin2(x)
+        outp = self.lin3(x)
+        return F.softmax(outp, dim=-1)
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[512, 256, 128],    # 3 couches
+"""
+class MLP_512_256_128(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+        Architecture: Input(64) -> 512 -> 256 -> 128 -> Output(64)
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        
+        super(MLP_512_256_128, self).__init__()
+        
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_512_256_128/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_512_256_128"
+
+        # Define the layers of the MLP: Input -> 512 -> 256 -> 128 -> Output
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 512)
+        self.lin2 = nn.Linear(512, 256)
+        self.lin3 = nn.Linear(256, 128)
+        self.lin4 = nn.Linear(128, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = self.lin2(x)
+        x = self.lin3(x)
+        outp = self.lin4(x)
+        return F.softmax(outp, dim=-1)
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+
+"""
+[512, 256, 128, 64] # 4 couches
+"""
+class MLP_512_256_128_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+        Architecture: Input(64) -> 512 -> 256 -> 128 -> 64 -> Output(64)
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        
+        super(MLP_512_256_128_64, self).__init__()
+        
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_512_256_128_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_512_256_128_64"
+
+        # Define the layers of the MLP: Input -> 512 -> 256 -> 128 -> 64 -> Output
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 512)
+        self.lin2 = nn.Linear(512, 256)
+        self.lin3 = nn.Linear(256, 128)
+        self.lin4 = nn.Linear(128, 64)
+        self.lin5 = nn.Linear(64, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = self.lin2(x)
+        x = self.lin3(x)
+        x = self.lin4(x)
+        outp = self.lin5(x)
+        return F.softmax(outp, dim=-1)
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+
 class LSTMs(nn.Module):
     def __init__(self, conf):
         """
@@ -219,89 +357,101 @@ class LSTMs(nn.Module):
         return outp
     
     def train_all(self, train, dev, num_epoch, device, optimizer):
-        if not os.path.exists(f"{self.path_save}"):
-            os.mkdir(f"{self.path_save}")
-        best_dev = 0.0
-        dev_epoch = 0
-        notchange=0
-        train_acc_list=[]
-        dev_acc_list=[]
-        torch.autograd.set_detect_anomaly(True)
-        init_time=time.time()
-        for epoch in range(1, num_epoch+1):
-            start_time=time.time()
-            loss = 0.0
-            nb_batch =  0
-            loss_batch = 0
-            for batch, labels, _ in tqdm(train):
-                outputs =self(batch.float().to(device))
-                loss = loss_fnc(outputs,labels.clone().detach().float().to(device))
-                loss.backward()
-                optimizer.step()
-                optimizer.zero_grad()
-                nb_batch += 1
-                loss_batch += loss.item()
-            print("epoch : " + str(epoch) + "/" + str(num_epoch) + ' - loss = '+\
-                  str(loss_batch/nb_batch))
-            last_training=time.time()-start_time
-
-            self.eval()
-            
-            train_clas_rep=self.evalulate(train, device)
-            acc_train=train_clas_rep["weighted avg"]["recall"]
-            train_acc_list.append(acc_train)
-            
-            dev_clas_rep=self.evalulate(dev, device)
-            acc_dev=dev_clas_rep["weighted avg"]["recall"]
-            dev_acc_list.append(acc_dev)
-            
-            last_prediction=time.time()-last_training-start_time
-            
-            print(f"Accuracy Train:{round(100*acc_train,2)}%, Dev:{round(100*acc_dev,2)}% ;",
-                  f"Time:{round(time.time()-init_time)}",
-                  f"(last_train:{round(last_training)}, last_pred:{round(last_prediction)})")
-
-            if acc_dev > best_dev or best_dev == 0.0:
-                notchange=0
-                torch.save(self, self.path_save + '/model_' + str(epoch) + '.pt')
-                best_dev = acc_dev
-                best_epoch = epoch
-            else:
-                notchange+=1
-                if notchange>self.earlyStopping:
-                    break
-                
-            self.train()
-            
-            print("*"*15,f"The best score on DEV {best_epoch} :{round(100*best_dev,3)}%")
-
-        self = torch.load(self.path_save + '/model_' + str(best_epoch) + '.pt', weights_only=False)
-        self.eval()
-        _clas_rep = self.evalulate(dev, device)
-        print(f"Recalculing the best DEV: WAcc : {100*_clas_rep['weighted avg']['recall']}%")
-
-        
-        return best_epoch
-    
+        return train_all(self, train, dev, num_epoch, device, optimizer)
     
     def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class CNN(nn.Module):
+    def __init__(self, conf):
+        return
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+def train_all(self, train, dev, num_epoch, device, optimizer):
+    if not os.path.exists(f"{self.path_save}"):
+        os.mkdir(f"{self.path_save}")
+    best_dev = 0.0
+    dev_epoch = 0
+    notchange=0
+    train_acc_list=[]
+    dev_acc_list=[]
+    torch.autograd.set_detect_anomaly(True)
+    init_time=time.time()
+    for epoch in range(1, num_epoch+1):
+        start_time=time.time()
+        loss = 0.0
+        nb_batch =  0
+        loss_batch = 0
+        for batch, labels, _ in tqdm(train):
+            outputs =self(batch.float().to(device))
+            loss = loss_fnc(outputs,labels.clone().detach().float().to(device))
+            loss.backward()
+            optimizer.step()
+            optimizer.zero_grad()
+            nb_batch += 1
+            loss_batch += loss.item()
+        print("epoch : " + str(epoch) + "/" + str(num_epoch) + ' - loss = '+\
+                str(loss_batch/nb_batch))
+        last_training=time.time()-start_time
+
+        self.eval()
         
-        all_predicts=[]
-        all_targets=[]
+        train_clas_rep=self.evalulate(train, device)
+        acc_train=train_clas_rep["weighted avg"]["recall"]
+        train_acc_list.append(acc_train)
         
-        for data, target_array,lengths in tqdm(test_loader):
-            output = self(data.float().to(device))
-            predicted=output.argmax(dim=-1).cpu().clone().detach().numpy()
-            target=target_array.argmax(dim=-1).numpy()
-            for i in range(len(predicted)):
-                all_predicts.append(predicted[i])
-                all_targets.append(target[i])
-                           
-        perf_rep=classification_report(all_targets,
-                                      all_predicts,
-                                      zero_division=1,
-                                      digits=4,
-                                      output_dict=True)
-        perf_rep=classification_report(all_targets,all_predicts,zero_division=1,digits=4,output_dict=True)
+        dev_clas_rep=self.evalulate(dev, device)
+        acc_dev=dev_clas_rep["weighted avg"]["recall"]
+        dev_acc_list.append(acc_dev)
         
-        return perf_rep
+        last_prediction=time.time()-last_training-start_time
+        
+        print(f"Accuracy Train:{round(100*acc_train,2)}%, Dev:{round(100*acc_dev,2)}% ;",
+                f"Time:{round(time.time()-init_time)}",
+                f"(last_train:{round(last_training)}, last_pred:{round(last_prediction)})")
+
+        if acc_dev > best_dev or best_dev == 0.0:
+            notchange=0
+            torch.save(self, self.path_save + '/model_' + str(epoch) + '.pt')
+            best_dev = acc_dev
+            best_epoch = epoch
+        else:
+            notchange+=1
+            if notchange>self.earlyStopping:
+                break
+            
+        self.train()
+        
+        print("*"*15,f"The best score on DEV {best_epoch} :{round(100*best_dev,3)}%")
+
+    self = torch.load(self.path_save + '/model_' + str(best_epoch) + '.pt', weights_only=False)
+    self.eval()
+    _clas_rep = self.evalulate(dev, device)
+    print(f"Recalculing the best DEV: WAcc : {100*_clas_rep['weighted avg']['recall']}%")
+
+    
+    return best_epoch
+
+def evaluate(self,test_loader, device):
+    all_predicts=[]
+    all_targets=[]
+    
+    for data, target_array,lengths in tqdm(test_loader):
+        output = self(data.float().to(device))
+        predicted=output.argmax(dim=-1).cpu().clone().detach().numpy()
+        target=target_array.argmax(dim=-1).numpy()
+        for i in range(len(predicted)):
+            all_predicts.append(predicted[i])
+            all_targets.append(target[i])
+                        
+    perf_rep=classification_report(all_targets,
+                                    all_predicts,
+                                    zero_division=1,
+                                    digits=4,
+                                    output_dict=True)
+    perf_rep=classification_report(all_targets,all_predicts,zero_division=1,digits=4,output_dict=True)
+    
+    return perf_rep

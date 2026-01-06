@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader
 
 from data import CustomDatasetOne
 from utile import BOARD_SIZE
-from networks_2100078 import MLP
+from networks_2100078 import *
 
 import time
 
@@ -50,8 +50,10 @@ conf["earlyStopping"]=20
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=128
+conf["dropout"]=0.1
 
-model = MLP(conf).to(device)
+model = MLP_64(conf).to(device)
+print(model)
 opt = torch.optim.Adam(model.parameters(), lr=0.001)
 
 def count_parameters(model):

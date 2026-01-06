@@ -1,0 +1,2 @@
+timestamp,model_type,model_name,optimizer,learning_rate,batch_size,epochs,best_epoch,params_number,dev_accuracy,dev_precision,dev_f1,dev_inference_time,test_accuracy,test_precision,test_f1,test_inference_time,training_time,dropout,activation
+2026-01-06 15:33:31,MLP,MLP_128_64_Adam_lr0.0001_bs64_drop0.0_actrelu_ep20,Adam,0.0001,64,20,20,20736,0.11876666666666667,0.19166316286428098,0.09338661255732136,1.9265797138214111,0.12251608291636884,0.19074873808610604,0.09690917604096201,2.3157355785369873,585.8853402137756,0.0,relu
