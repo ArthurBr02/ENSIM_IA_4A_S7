@@ -1,3 +1,23 @@
+## TODO
+
+Faire une map avec les différents paramètres à tester pour les différents modèles (MLP, LSTM, CNN, CNN + LSTM, Transformer, etc.)
+Ajouter les optimizers à tester dans la map (au moins deux) :
+Adam
+Adagrad
+SGD
+
+Ajouter les learning rates à tester dans la map (0.0001, 0.001, 0.01, 0.1)
+
+Récupérer les meilleurs paramètres pour chaque modèle (nombre de couches, nombre de neurones par couche, dropout, etc.)
+Tester différents batch sizes et nombres d'époques pour chaque modèle.
+
+Calcul de la courbe d'apprentissage (learning curve) pour chaque modèle testé.
+
+Faire des graphiques d'apprentissage (learning curves) pour chaque modèle testé.
+
+Faire tourner deux IA pour générer de nouvelles données et les ajouter au dataset d'entraînement.
+
+
 ## Report of TP
 This TP is 70% of your final note. It requires a report of your work that explain all experimental design and the result of your work that you have done in order to find your best model. The report should cover:
 Your data partitioning or your approach for collecting more data.
