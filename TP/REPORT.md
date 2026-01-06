@@ -1,3 +1,12 @@
+## Consignes pour les données
+Des données et modèles sont fournis mais notre objectif est de faire mieux que ce qui est donné.
+60 états de plateau / actions jouées
+
+Problème de ML: Supervisé (dataset par un joueur professionnel), classification (sortie: plateau avec des probabilités dans les cases où on peut jouer)
+
+Matrice d'entrée : 60 x 8 x 8 (60 états de plateau)
+
+
 ## TODO
 
 Faire une map avec les différents paramètres à tester pour les différents modèles (MLP, LSTM, CNN, CNN + LSTM, Transformer, etc.)
@@ -5,6 +14,8 @@ Ajouter les optimizers à tester dans la map (au moins deux) :
 Adam
 Adagrad
 SGD
+
+Faire un système pour exporter les métriques (accuracy, loss, etc.) dans des fichiers CSV ou JSON pour chaque modèle testé.
 
 Ajouter les learning rates à tester dans la map (0.0001, 0.001, 0.01, 0.1)
 
