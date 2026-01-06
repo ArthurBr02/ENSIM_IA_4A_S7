@@ -61,13 +61,13 @@ At the end of TP course, you should present your work in 5 minutes as well
 [x] Calculate and Compare the results of provided MLP and LSTM baseline
 5
 
-[] Optimizing the architecture of MLP (reporting the number of trainable weights is necessary)
+[x] Optimizing the architecture of MLP (reporting the number of trainable weights is necessary)
 5
 
 [] Optimizing the architecture of LSTM (reporting the number of trainable weights is necessary)
 5
 
-[] Testing different optimizer (at least two optimizers)
+[x] Testing different optimizer (at least two optimizers)
 5
 
 [] Optimizing learning rate (testing 0.0001, 0.001, 0.01, 0.1)

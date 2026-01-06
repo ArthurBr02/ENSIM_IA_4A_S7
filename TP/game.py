@@ -92,10 +92,11 @@ if torch.cuda.is_available():
 else:
     device = torch.device("cpu")
 
-for g in [0,1]:
+win = {}
+for g in range(60):
     # Two rounds of game would be played
     # First player1 starts game, and then Player2 starts the other game
-    if g:
+    if g%2 == 0:
         conf={}
         conf['player1']= sys.argv[1]
         conf['player2']= sys.argv[2]
@@ -182,8 +183,18 @@ for g in [0,1]:
     print("Moves log:",moves_log)
 
     if np.sum(board_stat)<0:
+        model_name = conf['player1'].replace('\\', '')
+        if not win.get(model_name):
+            win[model_name] = 0
+        win[model_name] += 1
+
         print(f"Black {conf['player1']} is winner (with {-1*int(np.sum(board_stat))} points)")
     elif np.sum(board_stat)>0:
+        model_name = conf['player2'].replace('\\', '')
+        if not win.get(model_name):
+            win[model_name] = 0
+        win[model_name] += 1
+
         print(f"White {conf['player2']} is winner (with {int(np.sum(board_stat))} points)")
     else:
         print(f"Draw")
@@ -200,3 +211,10 @@ for g in [0,1]:
     ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
                                     repeat_delay=1000)   
     ani.save(f"games/game_{g}.gif", writer='imagemagick', fps=0.8)
+
+print(win)
+
+# Enregistrement des points
+with open(f"games/points_{conf['player1']}_vs_{conf['player2']}.txt", "w") as f:
+    for model_name, points in win.items():
+        f.write(f"{model_name}: {points} points\n")

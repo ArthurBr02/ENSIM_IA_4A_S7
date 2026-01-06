@@ -317,7 +317,7 @@ class LSTMs(nn.Module):
         #1st option: using hidden states
         # self.hidden2output = nn.Linear(self.hidden_dim*2, self.board_size*self.board_size)
         
-        #2nd option: using output seauence
+        #2nd option: using output sequence
         self.hidden2output = nn.Linear(self.hidden_dim, self.board_size*self.board_size)
         
         self.dropout = nn.Dropout(p=0.1)
@@ -361,6 +361,582 @@ class LSTMs(nn.Module):
     
     def evalulate(self,test_loader, device):
         return evaluate(self, test_loader, device)
+
+"""
+[64],               # 1 couche
+"""
+class LSTMHiddenState_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        
+        # Using hidden states
+        outp = self.hidden2output(torch.cat((hn.squeeze(0),cn.squeeze(0)),-1))
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[256],              # 1 couche
+"""
+class LSTMHiddenState_256(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [256] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_256, self).__init__()
+        
+        self.name = "LSTMHiddenState_256"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_256/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [256]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 256, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(256*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        
+        # Using hidden states
+        outp = self.hidden2output(torch.cat((hn.squeeze(0),cn.squeeze(0)),-1))
+
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[512, 256],         # 2 couches
+"""
+class LSTMHiddenState_512_256(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [512, 256] - 2 couches
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_512_256, self).__init__()
+        
+        self.name = "LSTMHiddenState_512_256"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_512_256/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [512, 256]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 512, batch_first=True)
+        self.lstm2 = nn.LSTM(512, 256, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(256*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        lstm_out, (hn, cn) = self.lstm2(lstm_out)
+        
+        # Using hidden states
+        outp = self.hidden2output(torch.cat((hn.squeeze(0),cn.squeeze(0)),-1))
+
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[512, 256, 128],    # 3 couches
+"""
+class LSTMHiddenState_512_256_128(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [512, 256, 128] - 3 couches
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_512_256_128, self).__init__()
+        
+        self.name = "LSTMHiddenState_512_256_128"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_512_256_128/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [512, 256, 128]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 512, batch_first=True)
+        self.lstm2 = nn.LSTM(512, 256, batch_first=True)
+        self.lstm3 = nn.LSTM(256, 128, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(128*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        lstm_out, (hn, cn) = self.lstm2(lstm_out)
+        lstm_out, (hn, cn) = self.lstm3(lstm_out)
+        
+        # Using hidden states
+        outp = self.hidden2output(torch.cat((hn.squeeze(0),cn.squeeze(0)),-1))
+
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class LSTMOutputSequence(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMOutputSequence, self).__init__()
+        
+        self.name = "LSTMOutputSequence"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMOutputSequence/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.hidden_dim = conf["LSTM_conf"]["hidden_dim"]
+        self.conf_dropout=conf['dropout']
+
+         # Define the layers of the LSTM model
+        self.lstm = nn.LSTM(self.board_size*self.board_size, self.hidden_dim,batch_first=True)
+        
+        #2nd option: using output sequence
+        self.hidden2output = nn.Linear(self.hidden_dim, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+
+        #(lstm_out[:,-1,:] pass only last vector of output sequence)
+        if len(seq.shape)>2: # to manage the batch of sample
+            # Training phase where input is batch of seq
+            outp = self.hidden2output(lstm_out[:,-1,:])
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            # Prediction phase where input is a single seq
+            outp = self.hidden2output(lstm_out[-1,:])
+            outp = F.softmax(outp).squeeze()
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[64],               # 1 couche
+"""
+class LSTMOutputSequence_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMOutputSequence_64, self).__init__()
+        
+        self.name = "LSTMOutputSequence_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMOutputSequence_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using output sequence
+        self.hidden2output = nn.Linear(64, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+
+        # (lstm_out[:,-1,:] pass only last vector of output sequence)
+        if len(seq.shape)>2: # to manage the batch of sample
+            # Training phase where input is batch of seq
+            outp = self.hidden2output(lstm_out[:,-1,:])
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            # Prediction phase where input is a single seq
+            outp = self.hidden2output(lstm_out[-1,:])
+            outp = F.softmax(outp).squeeze()
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[256],              # 1 couche
+"""
+class LSTMOutputSequence_256(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [256] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMOutputSequence_256, self).__init__()
+        
+        self.name = "LSTMOutputSequence_256"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMOutputSequence_256/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        # Define the layers of the LSTM model: [256]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 256, batch_first=True)
+        
+        # Using output sequence
+        self.hidden2output = nn.Linear(256, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+
+        # (lstm_out[:,-1,:] pass only last vector of output sequence)
+        if len(seq.shape)>2: # to manage the batch of sample
+            # Training phase where input is batch of seq
+            outp = self.hidden2output(lstm_out[:,-1,:])
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            # Prediction phase where input is a single seq
+            outp = self.hidden2output(lstm_out[-1,:])
+            outp = F.softmax(outp).squeeze()
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[512, 256],         # 2 couches
+"""
+class LSTMOutputSequence_512_256(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [512, 256] - 2 couches
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMOutputSequence_512_256, self).__init__()
+        
+        self.name = "LSTMOutputSequence_512_256"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMOutputSequence_512_256/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        # Define the layers of the LSTM model: [512, 256]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 512, batch_first=True)
+        self.lstm2 = nn.LSTM(512, 256, batch_first=True)
+        
+        # Using output sequence
+        self.hidden2output = nn.Linear(256, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        lstm_out, (hn, cn) = self.lstm2(lstm_out)
+
+        # (lstm_out[:,-1,:] pass only last vector of output sequence)
+        if len(seq.shape)>2: # to manage the batch of sample
+            # Training phase where input is batch of seq
+            outp = self.hidden2output(lstm_out[:,-1,:])
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            # Prediction phase where input is a single seq
+            outp = self.hidden2output(lstm_out[-1,:])
+            outp = F.softmax(outp).squeeze()
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[512, 256, 128],    # 3 couches
+"""
+class LSTMOutputSequence_512_256_128(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [512, 256, 128] - 3 couches
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMOutputSequence_512_256_128, self).__init__()
+        
+        self.name = "LSTMOutputSequence_512_256_128"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMOutputSequence_512_256_128/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        # Define the layers of the LSTM model: [512, 256, 128]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 512, batch_first=True)
+        self.lstm2 = nn.LSTM(512, 256, batch_first=True)
+        self.lstm3 = nn.LSTM(256, 128, batch_first=True)
+        
+        # Using output sequence
+        self.hidden2output = nn.Linear(128, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        lstm_out, (hn, cn) = self.lstm2(lstm_out)
+        lstm_out, (hn, cn) = self.lstm3(lstm_out)
+
+        # (lstm_out[:,-1,:] pass only last vector of output sequence)
+        if len(seq.shape)>2: # to manage the batch of sample
+            # Training phase where input is batch of seq
+            outp = self.hidden2output(lstm_out[:,-1,:])
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            # Prediction phase where input is a single seq
+            outp = self.hidden2output(lstm_out[-1,:])
+            outp = F.softmax(outp).squeeze()
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
 
 class CNN(nn.Module):
     def __init__(self, conf):

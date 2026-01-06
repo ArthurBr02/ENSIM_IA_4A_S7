@@ -6,9 +6,9 @@ from torch.nn.modules.linear import Linear
 
 from data import CustomDatasetMany
 from utile import BOARD_SIZE
-from networks_2100078 import LSTMs
+from networks_2100078 import *
 
-torch.serialization.add_safe_globals([LSTMs, LSTM, Linear])
+torch.serialization.add_safe_globals([LSTMs, LSTM, Linear, LSTMHiddenState_64, LSTMOutputSequence_64, LSTMOutputSequence_256, LSTMOutputSequence_512_256, LSTMOutputSequence_512_256_128, LSTMHiddenState_256, LSTMHiddenState_512_256, LSTMHiddenState_512_256_128])
 
 
 if torch.cuda.is_available():
@@ -26,7 +26,7 @@ dataset_conf["filelist"]="train.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=1000
+dataset_conf['batch_size']=500
 
 print("Training Dataste ... ")
 ds_train = CustomDatasetMany(dataset_conf)
@@ -38,37 +38,60 @@ dataset_conf["filelist"]="dev.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=1000
+dataset_conf['batch_size']=500
 
 print("Development Dataste ... ")
 ds_dev = CustomDatasetMany(dataset_conf)
 devSet = DataLoader(ds_dev, batch_size=dataset_conf['batch_size'])
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=20
+conf['epoch']=200
 conf["earlyStopping"]=20
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=256
 conf["dropout"]=0.1
 
-model = LSTMs(conf).to(device)
-opt = torch.optim.Adam(model.parameters(), lr=0.005)
+learning_rates = [0.005]
+optimizers = ["Adam"]
+dropouts = [0.1]
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+for dropout in dropouts:
+    conf['dropout'] = dropout
 
-n = count_parameters(model)
-print("Number of parameters: %s" % n)
+    for optimizer in optimizers:
+        for lr in learning_rates:
+            if lr == 0.0001 and optimizer == "Adam": # déjà fait
+                continue
 
-start_time = time.time()
-best_epoch=model.train_all(trainSet,
-                       devSet,
-                       conf['epoch'],
-                       device, opt)
-print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"))
+            model = LSTMHiddenState_64(conf).to(device)
+            print(model)
+
+            n = count_parameters(model)
+            print("Number of parameters: %s" % n)
+
+            if optimizer == "Adam":
+                opt = torch.optim.Adam(model.parameters(), lr=lr)
+            elif optimizer == "Adagrad":
+                opt = torch.optim.Adagrad(model.parameters(), lr=lr)
+            elif optimizer == "SGD":
+                opt = torch.optim.SGD(model.parameters(), lr=lr)
+            else:
+                print("Pas d'optimizer trouvé")
+                break
+
+            start_time = time.time()
+            best_epoch=model.train_all(trainSet,
+                                devSet,
+                                conf['epoch'],
+                                device, opt)
+                                
+            print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"), "| Paramètres: Learning rate=", lr, "- Optimizer=", optimizer, "- Dropout=", dropout)
 
 # model = torch.load(conf["path_save"] + '/model_2.pt')
 # model.eval()

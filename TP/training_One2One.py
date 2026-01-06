@@ -16,6 +16,9 @@ else:
     
 print('Running on ' + str(device))
 
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
 len_samples=1
 
 dataset_conf={}  
@@ -24,7 +27,7 @@ dataset_conf["filelist"]="train.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=1000
+dataset_conf['batch_size']=2000
 
 print("Training Dataste ... ")
 ds_train = CustomDatasetOne(dataset_conf,load_data_once4all=True)
@@ -36,7 +39,7 @@ dataset_conf["filelist"]="dev.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=1000
+dataset_conf['batch_size']=2000
 
 print("Development Dataste ... ")
 ds_dev = CustomDatasetOne(dataset_conf,load_data_once4all=True)
@@ -46,28 +49,45 @@ conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
 conf['epoch']=20
-conf["earlyStopping"]=20
+conf["earlyStopping"]=5
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=128
 conf["dropout"]=0.1
 
-model = MLP_64(conf).to(device)
-print(model)
-opt = torch.optim.Adam(model.parameters(), lr=0.001)
+learning_rates = [0.001]
+optimizers = ["Adam"]
+dropouts = [0.1]
 
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+for dropout in dropouts:
+    conf['dropout'] = dropout
 
-n = count_parameters(model)
-print("Number of parameters: %s" % n)
+    for optimizer in optimizers:
+        for lr in learning_rates:
+            
+            model = MLP_256_128(conf).to(device)
+            print(model)
 
-start_time = time.time()
-best_epoch=model.train_all(trainSet,
-                       devSet,
-                       conf['epoch'],
-                       device, opt)
-print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"))
+            n = count_parameters(model)
+            print("Number of parameters: %s" % n)
+
+            if optimizer == "Adam":
+                opt = torch.optim.Adam(model.parameters(), lr=lr)
+            elif optimizer == "Adagrad":
+                opt = torch.optim.Adagrad(model.parameters(), lr=lr)
+            elif optimizer == "SGD":
+                opt = torch.optim.SGD(model.parameters(), lr=lr)
+            else:
+                print("Pas d'optimizer trouvé")
+                break
+
+            start_time = time.time()
+            best_epoch=model.train_all(trainSet,
+                                devSet,
+                                conf['epoch'],
+                                device, opt)
+                                
+            print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"), "| Paramètres: Learning rate=", lr, "- Optimizer=", optimizer, "- Dropout=", dropout)
 
 # model = torch.load(conf["path_save"] + '/model_2.pt')
 # model.eval()
