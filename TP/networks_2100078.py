@@ -420,6 +420,62 @@ class LSTMHiddenState_64(nn.Module):
     
     def evalulate(self,test_loader, device):
         return evaluate(self, test_loader, device)
+    
+class LSTMHiddenState_Dropout_03_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_03_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_03_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = 0.3
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        
+        # Using hidden states
+        outp = self.hidden2output(torch.cat((hn.squeeze(0),cn.squeeze(0)),-1))
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
 
 """
 [256],              # 1 couche

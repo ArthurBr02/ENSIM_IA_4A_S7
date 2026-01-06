@@ -8,7 +8,7 @@ from data import CustomDatasetMany
 from utile import BOARD_SIZE
 from networks_2100078 import *
 
-torch.serialization.add_safe_globals([LSTMs, LSTM, Linear, LSTMHiddenState_64, LSTMOutputSequence_64, LSTMOutputSequence_256, LSTMOutputSequence_512_256, LSTMOutputSequence_512_256_128, LSTMHiddenState_256, LSTMHiddenState_512_256, LSTMHiddenState_512_256_128])
+torch.serialization.add_safe_globals([LSTMs, LSTM, Linear, LSTMHiddenState_Dropout_03_64, LSTMHiddenState_64, LSTMOutputSequence_64, LSTMOutputSequence_256, LSTMOutputSequence_512_256, LSTMOutputSequence_512_256_128, LSTMHiddenState_256, LSTMHiddenState_512_256, LSTMHiddenState_512_256_128])
 
 
 if torch.cuda.is_available():
@@ -69,7 +69,7 @@ for dropout in dropouts:
             if lr == 0.0001 and optimizer == "Adam": # déjà fait
                 continue
 
-            model = LSTMHiddenState_64(conf).to(device)
+            model = LSTMHiddenState_Dropout_03_64(conf).to(device)
             print(model)
 
             n = count_parameters(model)

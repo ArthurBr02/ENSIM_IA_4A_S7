@@ -350,6 +350,8 @@ Parties:
 # Conclusion de l'optimisation
 Après avoir optimisé les architectures et les paramètres d'entraînement des modèles MLP et LSTM, il est clair que le modèle LSTM avec hidden state surpasse largement le modèle MLP en termes de performance. Le modèle LSTM optimisé a atteint une accuracy de 36.49% sur le dev set, contre 16.75% pour le modèle MLP optimisé. De plus, lors des parties jouées, le modèle LSTM a remporté toutes les confrontations contre le modèle MLP, démontrant sa supériorité dans ce contexte.
 
+# Étude de l'impact du dropout TODO
+
 # CNN TODO
 
 # CNN-LSTM TODO
