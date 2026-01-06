@@ -6,6 +6,8 @@ Adam
 Adagrad
 SGD
 
+Faire un système pour exporter les métriques (accuracy, loss, etc.) dans des fichiers CSV ou JSON pour chaque modèle testé.
+
 Ajouter les learning rates à tester dans la map (0.0001, 0.001, 0.01, 0.1)
 
 Récupérer les meilleurs paramètres pour chaque modèle (nombre de couches, nombre de neurones par couche, dropout, etc.)
