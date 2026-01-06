@@ -166,7 +166,7 @@ Pour SGD, les performances sont également très faibles quel que soit le learni
 ### Conclusion
 D'après les résultats obtenus, l'optimizer Adam avec un learning rate de 0.001 offre les meilleures performances pour le modèle MLP avec une architecture [256, 128]. Les autres optimizers, Adagrad et SGD, ne parviennent pas à atteindre des performances comparables, quel que soit le learning rate utilisé. Pour la suite des optimisations, je vais donc utiliser Adam avec un learning rate de 0.001, un batch size de 2000 et un dropout de 0.1.
 
-### Vérification des performances finales
+### Vérification des performances finales (vérification de l'impact de l'augmentation du nombre d'epochs)
 J'ai relancé l'entraînement du modèle MLP avec les meilleurs paramètres trouvés (architecture [256, 128], optimizer Adam, learning rate 0.001, dropout 0.1, batch size 2000) pour vérifier les performances. J'ai exécuté l'entraînement sur 200 epochs avec earlyStopping à 20.
 
 ```logs
@@ -314,7 +314,7 @@ Pour SGD, les performances sont très faibles quel que soit le learning rate, av
 ### Conclusion
 Les deux optimizers Adam et Adagrad offrent des performances raisonnables, avec des accuracies maximales respectives de 35.31% et 29.91%. Cependant, Adam semble être plus stable et performant dans l'ensemble des tests. En revanche, l'optimizer SGD ne parvient pas à atteindre des performances comparables, avec une accuracy maximale de seulement 12.69%. Pour la suite des optimisations, je vais donc utiliser Adam avec un learning rate de 0.005, un batch size de 500 et un dropout de 0.1.
 
-### Vérification des performances finales
+### Vérification des performances finales (vérification de l'impact de l'augmentation du nombre d'epochs)
 
 J'ai relancé l'entraînement du modèle LSTM avec les meilleurs paramètres trouvés (LSTM hidden state avec une couche de 64 neurones, optimizer Adam, learning rate 0.005, dropout 0.1, batch size 500) pour vérifier les performances. J'ai exécuté l'entraînement sur 200 epochs avec earlyStopping à 20.
 
@@ -323,11 +323,38 @@ Recalculing the best DEV: WAcc : 36.49333333333333%
 Fin entrainement LSTMHiddenState_64 sur 64 epoch en (530.9663951396942, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.1
 ```
 
+On obtient une accuracy de 36.49% sur le dev set, ce qui confirme que les paramètres choisis sont efficaces pour améliorer les performances du modèle LSTM par rapport à la version de base (22.07%). Le gain est significatif malgré l'augmentation du temps d'entraînement (530sc contre 403sc pour la version de base).
+
 ### Exécution de game.py
-J'ai testé le modèle LSTM optimisé en le faisant jouer des parties contre le modèle MLP optimisé. 
+J'ai testé le modèle LSTM optimisé en le faisant jouer des parties contre le modèle MLP optimisé. J'ai lancé 10 parties.
+Sur les 10, le modèle LSTM a gagné les 10 parties. Il est donc clairement supérieur au modèle MLP optimisé.
+J'ai répété l'expérience sur 10 parties supplémentaires et le modèle LSTM a encore gagné les 10 parties.
 
 ```logs
 Parties:
-1-White save_models_LSTMHiddenState_64\model_43.pt is winner (with 14 points)
-2-Black save_models_LSTMHiddenState_64\model_43.pt is winner (with 20 points)
+1-{'save_models_LSTMHiddenState_64model_43.pt': 10}
+2-{'save_models_LSTMHiddenState_64model_43.pt': 10}
 ```
+
+On a donc un taux de victoire de 100% pour le modèle LSTM optimisé contre le modèle MLP optimisé sur les 20 parties jouées.
+
+J'ai ensuite fait jouer le modèle LSTM optimisé contre lui-même, on a un taux de victoire de 50%.
+```logs
+Parties:
+1-{'save_models_LSTMHiddenState_64model_43.pt': 5, 'save_models_LSTMHiddenState_64model_41.pt': 5}
+2-{'save_models_LSTMHiddenState_64model_43.pt': 5, 'save_models_LSTMHiddenState_64model_41.pt': 5}
+```
+
+# Courbes d'apprentissage TODO
+
+# Conclusion de l'optimisation
+Après avoir optimisé les architectures et les paramètres d'entraînement des modèles MLP et LSTM, il est clair que le modèle LSTM avec hidden state surpasse largement le modèle MLP en termes de performance. Le modèle LSTM optimisé a atteint une accuracy de 36.49% sur le dev set, contre 16.75% pour le modèle MLP optimisé. De plus, lors des parties jouées, le modèle LSTM a remporté toutes les confrontations contre le modèle MLP, démontrant sa supériorité dans ce contexte.
+
+# CNN TODO
+
+# CNN-LSTM TODO
+
+# Transformer TODO
+
+# Augmentation des données TODO
+Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.

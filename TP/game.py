@@ -93,7 +93,7 @@ else:
     device = torch.device("cpu")
 
 win = {}
-for g in range(60):
+for g in range(10):
     # Two rounds of game would be played
     # First player1 starts game, and then Player2 starts the other game
     if g%2 == 0:
@@ -215,6 +215,6 @@ for g in range(60):
 print(win)
 
 # Enregistrement des points
-with open(f"games/points_{conf['player1']}_vs_{conf['player2']}.txt", "w") as f:
+with open(f"games/points_{conf['player1'].replace('\\', '')}_vs_{conf['player2'].replace('\\', '')}.txt", "w") as f:
     for model_name, points in win.items():
         f.write(f"{model_name}: {points} points\n")

@@ -64,16 +64,16 @@ At the end of TP course, you should present your work in 5 minutes as well
 [x] Optimizing the architecture of MLP (reporting the number of trainable weights is necessary)
 5
 
-[] Optimizing the architecture of LSTM (reporting the number of trainable weights is necessary)
+[X] Optimizing the architecture of LSTM (reporting the number of trainable weights is necessary)
 5
 
 [x] Testing different optimizer (at least two optimizers)
 5
 
-[] Optimizing learning rate (testing 0.0001, 0.001, 0.01, 0.1)
+[X] Optimizing learning rate (testing 0.0001, 0.001, 0.01, 0.1)
 5
 
-[] Checking the impact of different epochs and batch size
+[X] Checking the impact of different epochs and batch size
 5
 
 [] Using all data and not only winner samples
