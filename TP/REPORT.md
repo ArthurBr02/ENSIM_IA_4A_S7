@@ -1,4 +1,4 @@
-## Consignes pour les données
+## Consignes
 Des données et modèles sont fournis mais notre objectif est de faire mieux que ce qui est donné.
 60 états de plateau / actions jouées
 
@@ -6,6 +6,25 @@ Problème de ML: Supervisé (dataset par un joueur professionnel), classificatio
 
 Matrice d'entrée : 60 x 8 x 8 (60 états de plateau)
 
+Il ne faut pas se limiter aux métriques de loss et accuracy, mais aussi regarder le taux de victoire.
+
+Many2One: On prend plusieurs états du plateau pour prédire l'action (les 60 états) (Chapitre 4 - LSTM, GRU, Transformer)
+One2One: On ne prend qu'un seul état du plateau pour prédire l'action (le dernier état) (Chapitre 3 - MLP, CNN)
+
+Prendre en compte le temps de calcul (GPU/CPU)
+
+Dans le rapport, il faut expliquer les choix faits (architecture, hyperparamètres, etc.) et les résultats obtenus (tableaux, graphiques, etc.)
+
+On doit garder les métriques de loss et accuracy sur le dev/test, le temps de calcul (entrainement/inférence), nombre de victoires set pour chaque modèle testé.
+
+Tester + de 100 modèles différents (architectures, hyperparamètres, etc.)
+
+TOUS LES MODÈLES DOIVENT ÊTRE TESTÉS SUR LE DEV/TEST SET (PAS SEULEMENT LE MEILLEUR)
+TOUS LES MODÈLES DOIVENT ÊTRE CRÉÉS DANS LE FICHIER networks_2100078.py
+
+TOUS LES MODELES DOIVENT AVOIR LES MEMES FONCTIONS train_all et evaluate
+
+Pour tester le modèle sur HuggingFace, enregistrer le modèle au format jit (https://docs.pytorch.org/docs/main/generated/torch.jit.save.html#torch.jit.save) - https://huggingface.co/spaces/MeysamSh/Othello-League
 
 ## TODO
 

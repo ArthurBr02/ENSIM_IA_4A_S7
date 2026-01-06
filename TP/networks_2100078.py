@@ -155,8 +155,6 @@ class MLP(nn.Module):
         
         return perf_rep
     
-    
-
 class LSTMs(nn.Module):
     def __init__(self, conf):
         """
@@ -307,5 +305,3 @@ class LSTMs(nn.Module):
         perf_rep=classification_report(all_targets,all_predicts,zero_division=1,digits=4,output_dict=True)
         
         return perf_rep
-            
-
