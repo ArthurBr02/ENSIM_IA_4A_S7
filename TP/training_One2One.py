@@ -31,7 +31,8 @@ dataset_conf['batch_size']=2000
 
 print("Training Dataste ... ")
 ds_train = CustomDatasetOne(dataset_conf,load_data_once4all=True)
-trainSet = DataLoader(ds_train, batch_size=dataset_conf['batch_size'])
+trainSet = DataLoader(ds_train, 
+                      batch_size=dataset_conf['batch_size'])
 
 dataset_conf={}  
 # self.filelist : a list of all games for train/dev/test
@@ -43,7 +44,8 @@ dataset_conf['batch_size']=2000
 
 print("Development Dataste ... ")
 ds_dev = CustomDatasetOne(dataset_conf,load_data_once4all=True)
-devSet = DataLoader(ds_dev, batch_size=dataset_conf['batch_size'])
+devSet = DataLoader(ds_dev, 
+                    batch_size=dataset_conf['batch_size'])
 
 conf={}
 conf["board_size"]=BOARD_SIZE

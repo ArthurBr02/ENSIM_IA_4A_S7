@@ -345,12 +345,107 @@ Parties:
 2-{'save_models_LSTMHiddenState_64model_43.pt': 5, 'save_models_LSTMHiddenState_64model_41.pt': 5}
 ```
 
-# Courbes d'apprentissage TODO
+### Overfitting
+
+#### LSTM optimisé
+J'ai aussi fait faire des parties entre le modèle LSTM optimisé et le modèle LSTM de base. Le modèle de base a gagné toutes les parties alors qu'il a un score bien moins bon. Je pense qu'il y a de l'overfitting sur le modèle optimisé, car il a été entraîné plus longtemps et a pu mieux mémoriser les parties du dataset d'entraînement.
+
+D'après l'image suivante, on peut voir qu'il y a de l'overfitting car l'accuracy sur le dev set stagne alors que l'accuracy sur le train set continue d'augmenter. C'est pareil pour la loss, on voit que la loss sur le dev set stagne alors que la loss sur le train set continue de diminuer.
+![Courbes d'apprentissage LSTM optimisé](results/plots/learning_curve_LSTMHiddenState_64_20260107_140253.png)
+
+Pour améliorer ça, je vais réentrainer le model LSTM optimisé avec plus de dropout (0.1 et 0.2) et moins d'epochs (20).
+
+Pour ce modèle, on a 41536 poids entraînables.
+
+- Dropout = 0.1
+```logs
+Recalculing the best DEV: WAcc : 35.42666666666667%
+Fin entrainement LSTMHiddenState_Dropout_64 sur 20 epoch en (179.8138403892517, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.1
+```
+![Courbes d'apprentissage LSTM optimisé - Dropout = 0.1](results/plots/learning_curve_LSTMHiddenState_Dropout_64_20260107_142143.png)
+
+- Dropout = 0.2
+```logs
+Recalculing the best DEV: WAcc : 34.026666666666664%
+Fin entrainement LSTMHiddenState_Dropout_64 sur 20 epoch en (180.72124028205872, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
+```
+![Courbes d'apprentissage LSTM optimisé - Dropout = 0.2](results/plots/learning_curve_LSTMHiddenState_Dropout_64_20260107_142444.png)
+
+
+On peut voir que grâce à l'ajout du dropout, la différence de loss entre train et dev s'est réduite ce qui indique une réduction de l'overfitting. En ajoutant une fonction d'activation comme ReLU ou tanh, on pourrait peut-être encore réduire l'overfitting.
+
+- Dropout = 0.1 + ReLU
+```logs
+Recalculing the best DEV: WAcc : 31.169999999999998%
+Fin entrainement LSTMHiddenState_Dropout_Relu_64 sur 20 epoch en (242.9840669631958, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.1
+```
+
+![Courbes d'apprentissage LSTM optimisé - Dropout = 0.1 + ReLU](results/plots\learning_curve_LSTMHiddenState_Dropout_Relu_64_20260107_144004.png)
+
+- Dropout = 0.2 + ReLU
+```logs
+Recalculing the best DEV: WAcc : 29.823333333333334%
+Fin entrainement LSTMHiddenState_Dropout_Relu_64 sur 20 epoch en (248.544508934021, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage LSTM optimisé - Dropout = 0.2 + ReLU](results/plots/learning_curve_LSTMHiddenState_Dropout_Relu_64_20260107_143253.png)
+
+- Dropout = 0.1 + tanh
+```logs
+Recalculing the best DEV: WAcc : 34.94%
+Fin entrainement LSTMHiddenState_Dropout_Tanh_64 sur 20 epoch en (246.82054924964905, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.1
+```
+
+![Courbes d'apprentissage LSTM optimisé - Dropout = 0.1 + tanh](results/plots/learning_curve_LSTMHiddenState_Dropout_Tanh_64_20260107_143617.png)
+
+- Dropout = 0.2 + tanh
+```logs
+Recalculing the best DEV: WAcc : 34.35%
+Fin entrainement LSTMHiddenState_Dropout_Tanh_64 sur 20 epoch en (243.60504722595215, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage LSTM optimisé - Dropout = 0.2 + tanh](results/plots\learning_curve_LSTMHiddenState_Dropout_Tanh_64_20260107_144021.png)
+
+Plus tôt j'avais retiré la partie "softmax" à la fin du modèle LSTM, je vais la remettre pour voir si ça améliore les performances.
+
+- Dropout = 0.1 + Relu + softmax
+```logs
+Recalculing the best DEV: WAcc : 19.666666666666664%
+Fin entrainement LSTMHiddenState_Dropout_Relu_Softmax_64 sur 20 epoch en (266.0434787273407, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.1
+```
+
+- Dropout = 0.2 + Relu + softmax
+```logs
+Recalculing the best DEV: WAcc : 20.676666666666666%
+Fin entrainement LSTMHiddenState_Dropout_Relu_Softmax_64 sur 20 epoch en (275.09586095809937, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
+```
+
+- Dropout = 0.1 + Tanh + softmax
+```logs
+Recalculing the best DEV: WAcc : 22.096666666666668%
+Fin entrainement LSTMHiddenState_Dropout_Tanh_Softmax_64 sur 20 epoch en (275.36101055145264, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.1
+```
+
+- Dropout = 0.2 + Tanh + softmax
+```logs
+Recalculing the best DEV: WAcc : 21.51%
+Fin entrainement LSTMHiddenState_Dropout_Tanh_Softmax_64 sur 20 epoch en (274, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
+```
+
+J'avais retiré le softmax pour trouver le modèle le plus efficace en ayant le moins de complexité possible. En l'ajoutant, on voit que les scores diminuent. Cependant, peut-être qu'en ajoutant le softmax les paramètres optimaux du modèle changent et qu'on pourrait retrouver de meilleures performances en réoptimisant les paramètres.
+
+Je vais faire un gridsearch plus poussé pour trouver les meilleurs paramètres pour le modèle LSTM optimisé avec dropout de 0.2 et softmax.
+
+#### MLP optimisé
+Comme le LSTM optimisé souffrait d'overfitting, j'ai fait la même analyse sur le MLP optimisé.
 
 # Conclusion de l'optimisation
 Après avoir optimisé les architectures et les paramètres d'entraînement des modèles MLP et LSTM, il est clair que le modèle LSTM avec hidden state surpasse largement le modèle MLP en termes de performance. Le modèle LSTM optimisé a atteint une accuracy de 36.49% sur le dev set, contre 16.75% pour le modèle MLP optimisé. De plus, lors des parties jouées, le modèle LSTM a remporté toutes les confrontations contre le modèle MLP, démontrant sa supériorité dans ce contexte.
 
-# Étude de l'impact du dropout TODO
+# Augmentation des données TODO
+Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.
+
+Je vais aussi prendre les données actuelles et faire des transformations simples pour augmenter le dataset, comme des rotations et des réflexions du plateau de jeu.
 
 # CNN TODO
 
@@ -358,5 +453,3 @@ Après avoir optimisé les architectures et les paramètres d'entraînement des 
 
 # Transformer TODO
 
-# Augmentation des données TODO
-Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.

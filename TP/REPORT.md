@@ -50,6 +50,8 @@ Faire des graphiques d'apprentissage (learning curves) pour chaque modèle test�
 Faire tourner deux IA pour générer de nouvelles données et les ajouter au dataset d'entraînement.
 
 
+
+
 ## Report of TP
 This TP is 70% of your final note. It requires a report of your work that explain all experimental design and the result of your work that you have done in order to find your best model. The report should cover:
 Your data partitioning or your approach for collecting more data.
@@ -76,7 +78,7 @@ At the end of TP course, you should present your work in 5 minutes as well
 [X] Checking the impact of different epochs and batch size
 5
 
-[] Using all data and not only winner samples
+[] Using all data and not only winner samples (voir fichier data.py, on utilise que 30 tours sur 60 | for sm_idx in range(30):)
 5
 
 [] Calculating the learning curve (training/dev performance on epochs)

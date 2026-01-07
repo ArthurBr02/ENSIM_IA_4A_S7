@@ -8,7 +8,7 @@ from data import CustomDatasetMany
 from utile import BOARD_SIZE
 from networks_2100078 import *
 
-torch.serialization.add_safe_globals([LSTMs, LSTM, Linear, LSTMHiddenState_Dropout_03_64, LSTMHiddenState_64, LSTMOutputSequence_64, LSTMOutputSequence_256, LSTMOutputSequence_512_256, LSTMOutputSequence_512_256_128, LSTMHiddenState_256, LSTMHiddenState_512_256, LSTMHiddenState_512_256_128])
+torch.serialization.add_safe_globals([LSTMs, LSTM, Linear, LSTMHiddenState_Dropout_Relu_Softmax_Gridsearch_64, LSTMHiddenState_Dropout_Tanh_Softmax_Gridsearch_64, LSTMHiddenState_Dropout_64, LSTMHiddenState_Dropout_Relu_Softmax_64, LSTMHiddenState_Dropout_Tanh_Softmax_64, LSTMHiddenState_Dropout_Relu_64, LSTMHiddenState_Dropout_Tanh_64, LSTMHiddenState_64, LSTMOutputSequence_64, LSTMOutputSequence_256, LSTMOutputSequence_512_256, LSTMOutputSequence_512_256_128, LSTMHiddenState_256, LSTMHiddenState_512_256, LSTMHiddenState_512_256_128])
 
 
 if torch.cuda.is_available():
@@ -29,8 +29,9 @@ dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=500
 
 print("Training Dataste ... ")
-ds_train = CustomDatasetMany(dataset_conf)
-trainSet = DataLoader(ds_train, batch_size=dataset_conf['batch_size'])
+ds_train = CustomDatasetMany(dataset_conf, load_data_once4all=True)
+trainSet = DataLoader(ds_train, 
+                      batch_size=dataset_conf['batch_size'])
 
 dataset_conf={}  
 # self.filelist : a list of all games for train/dev/test
@@ -41,8 +42,9 @@ dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=500
 
 print("Development Dataste ... ")
-ds_dev = CustomDatasetMany(dataset_conf)
-devSet = DataLoader(ds_dev, batch_size=dataset_conf['batch_size'])
+ds_dev = CustomDatasetMany(dataset_conf, load_data_once4all=True)
+devSet = DataLoader(ds_dev, 
+                    batch_size=dataset_conf['batch_size'])
 
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
@@ -50,26 +52,23 @@ def count_parameters(model):
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=200
-conf["earlyStopping"]=20
+conf['epoch']=20
+conf["earlyStopping"]=5
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=256
-conf["dropout"]=0.1
+conf["dropout"]=0.2
 
 learning_rates = [0.005]
 optimizers = ["Adam"]
-dropouts = [0.1]
+dropouts = [0.1, 0.2]
 
 for dropout in dropouts:
     conf['dropout'] = dropout
 
     for optimizer in optimizers:
         for lr in learning_rates:
-            if lr == 0.0001 and optimizer == "Adam": # déjà fait
-                continue
-
-            model = LSTMHiddenState_Dropout_03_64(conf).to(device)
+            model = LSTMHiddenState_Dropout_Tanh_Softmax_64(conf).to(device)
             print(model)
 
             n = count_parameters(model)

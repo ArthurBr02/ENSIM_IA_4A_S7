@@ -1,4 +1,4 @@
-import torch
+﻿import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from sklearn.metrics import classification_report
@@ -7,6 +7,8 @@ from tqdm import tqdm
 import numpy as np
 import os
 import time
+import csv
+from datetime import datetime
 
 
 def loss_fnc(predictions, targets):
@@ -421,7 +423,7 @@ class LSTMHiddenState_64(nn.Module):
     def evalulate(self,test_loader, device):
         return evaluate(self, test_loader, device)
     
-class LSTMHiddenState_Dropout_03_64(nn.Module):
+class LSTMHiddenState_Dropout_64(nn.Module):
     def __init__(self, conf):
         """
         Long Short-Term Memory (LSTM) model for the Othello game.
@@ -430,15 +432,15 @@ class LSTMHiddenState_Dropout_03_64(nn.Module):
         Parameters:
         - conf (dict): Configuration dictionary containing model parameters.
         """
-        super(LSTMHiddenState_Dropout_03_64, self).__init__()
+        super(LSTMHiddenState_Dropout_64, self).__init__()
         
-        self.name = "LSTMHiddenState_64"
+        self.name = "LSTMHiddenState_Dropout_64"
 
         self.board_size=conf["board_size"]
-        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_03_64/"
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_64/"
         self.earlyStopping=conf["earlyStopping"]
         self.len_inpout_seq=conf["len_inpout_seq"]
-        self.conf_dropout = 0.3
+        self.conf_dropout = conf['dropout']
 
         # Define the layers of the LSTM model: [64]
         self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
@@ -465,10 +467,388 @@ class LSTMHiddenState_Dropout_03_64(nn.Module):
             seq=torch.flatten(seq, start_dim=1)
 
         lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        # hidden_concat = F.relu(hidden_concat)  # Activation
+        outp = self.hidden2output(hidden_concat)
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class LSTMHiddenState_Dropout_Relu_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Relu_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Relu_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Relu_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
         
         # Using hidden states
-        outp = self.hidden2output(torch.cat((hn.squeeze(0),cn.squeeze(0)),-1))
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
         
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = F.relu(hidden_concat)  # Activation
+        outp = self.hidden2output(hidden_concat)
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class LSTMHiddenState_Dropout_Tanh_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Tanh_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Tanh_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Tanh_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = torch.tanh(hidden_concat)  # Activation
+        outp = self.hidden2output(hidden_concat)
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class LSTMHiddenState_Dropout_Relu_Softmax_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Relu_Softmax_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Relu_Softmax_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Relu_Softmax_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = F.relu(hidden_concat)  # Activation
+        
+        # Utiliser hidden_concat au lieu de lstm_out
+        outp = self.hidden2output(hidden_concat)
+
+        if len(seq.shape)>2:
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            outp = F.softmax(outp).squeeze()
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class LSTMHiddenState_Dropout_Tanh_Softmax_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Tanh_Softmax_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Tanh_Softmax_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Tanh_Softmax_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = torch.tanh(hidden_concat)  # Activation
+        
+        # Utiliser hidden_concat au lieu de lstm_out
+        outp = self.hidden2output(hidden_concat)
+
+        if len(seq.shape)>2:
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            outp = F.softmax(outp).squeeze()
+
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class LSTMHiddenState_Dropout_Relu_Softmax_Gridsearch_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Relu_Softmax_Gridsearch_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Relu_Softmax_Gridsearch_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Relu_Softmax_Gridsearch_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = F.relu(hidden_concat)  # Activation
+        
+        # Utiliser hidden_concat au lieu de lstm_out
+        outp = self.hidden2output(hidden_concat)
+
+        if len(seq.shape)>2:
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            outp = F.softmax(outp).squeeze()
+        
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class LSTMHiddenState_Dropout_Tanh_Softmax_Gridsearch_64(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [64] - 1 couche
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Tanh_Softmax_Gridsearch_64, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Tanh_Softmax_Gridsearch_64"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Tanh_Softmax_Gridsearch_64/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [64]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 64, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(64*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = torch.tanh(hidden_concat)  # Activation
+        
+        # Utiliser hidden_concat au lieu de lstm_out
+        outp = self.hidden2output(hidden_concat)
+
+        if len(seq.shape)>2:
+            outp = F.softmax(outp, dim=1).squeeze()
+        else:
+            outp = F.softmax(outp).squeeze()
+
         return outp
     
     def train_all(self, train, dev, num_epoch, device, optimizer):
@@ -1006,10 +1386,13 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
     if not os.path.exists(f"{self.path_save}"):
         os.mkdir(f"{self.path_save}")
     best_dev = 0.0
+    best_dev_loss = float('inf')
     dev_epoch = 0
     notchange=0
     train_acc_list=[]
     dev_acc_list=[]
+    train_loss_list=[]
+    dev_loss_list=[]
     torch.autograd.set_detect_anomaly(True)
     init_time=time.time()
     for epoch in range(1, num_epoch+1):
@@ -1025,8 +1408,12 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
             optimizer.zero_grad()
             nb_batch += 1
             loss_batch += loss.item()
+        
+        avg_train_loss = loss_batch/nb_batch
+        train_loss_list.append(avg_train_loss)
+        
         print("epoch : " + str(epoch) + "/" + str(num_epoch) + ' - loss = '+\
-                str(loss_batch/nb_batch))
+                str(avg_train_loss))
         last_training=time.time()-start_time
 
         self.eval()
@@ -1034,6 +1421,18 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
         train_clas_rep=self.evalulate(train, device)
         acc_train=train_clas_rep["weighted avg"]["recall"]
         train_acc_list.append(acc_train)
+        
+        # Calculer la loss sur dev
+        dev_loss_total = 0.0
+        dev_nb_batch = 0
+        for batch, labels, _ in dev:
+            with torch.no_grad():
+                outputs = self(batch.float().to(device))
+                dev_loss = loss_fnc(outputs, labels.clone().detach().float().to(device))
+                dev_loss_total += dev_loss.item()
+                dev_nb_batch += 1
+        avg_dev_loss = dev_loss_total / dev_nb_batch if dev_nb_batch > 0 else 0.0
+        dev_loss_list.append(avg_dev_loss)
         
         dev_clas_rep=self.evalulate(dev, device)
         acc_dev=dev_clas_rep["weighted avg"]["recall"]
@@ -1049,6 +1448,7 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
             notchange=0
             torch.save(self, self.path_save + '/model_' + str(epoch) + '.pt')
             best_dev = acc_dev
+            best_dev_loss = avg_dev_loss
             best_epoch = epoch
         else:
             notchange+=1
@@ -1062,8 +1462,26 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
     self = torch.load(self.path_save + '/model_' + str(best_epoch) + '.pt', weights_only=False)
     self.eval()
     _clas_rep = self.evalulate(dev, device)
-    print(f"Recalculing the best DEV: WAcc : {100*_clas_rep['weighted avg']['recall']}%")
+    final_dev_acc = _clas_rep['weighted avg']['recall']
+    print(f"Recalculing the best DEV: WAcc : {100*final_dev_acc}%")
 
+    total_training_time = time.time() - init_time
+    
+    # Sauvegarder automatiquement les résultats
+    _save_training_results(
+        model_name=self.name,
+        best_epoch=best_epoch,
+        epochs_completed=epoch,
+        best_dev_accuracy=final_dev_acc,
+        best_dev_loss=best_dev_loss,
+        total_training_time=total_training_time,
+        train_acc_history=train_acc_list,
+        dev_acc_history=dev_acc_list,
+        train_loss_history=train_loss_list,
+        dev_loss_history=dev_loss_list,
+        optimizer_name=optimizer.__class__.__name__,
+        learning_rate=optimizer.param_groups[0]['lr']
+    )
     
     return best_epoch
 
@@ -1087,3 +1505,96 @@ def evaluate(self,test_loader, device):
     perf_rep=classification_report(all_targets,all_predicts,zero_division=1,digits=4,output_dict=True)
     
     return perf_rep
+
+def _save_training_results(model_name, best_epoch, epochs_completed, best_dev_accuracy, 
+                           best_dev_loss, total_training_time, train_acc_history, 
+                           dev_acc_history, train_loss_history, dev_loss_history,
+                           optimizer_name, learning_rate):
+    """
+    Fonction interne pour sauvegarder automatiquement les résultats d'entraînement.
+    """
+    # Créer le répertoire results s'il n'existe pas
+    results_dir = 'results'
+    if not os.path.exists(results_dir):
+        os.makedirs(results_dir)
+    
+    # Sauvegarder dans un fichier CSV (résumé)
+    csv_filepath = os.path.join(results_dir, 'training_results.csv')
+    file_exists = os.path.isfile(csv_filepath)
+    
+    with open(csv_filepath, 'a', newline='', encoding='utf-8') as csvfile:
+        fieldnames = [
+            'timestamp',
+            'model_name',
+            'optimizer',
+            'learning_rate',
+            'best_epoch',
+            'epochs_completed',
+            'best_dev_accuracy',
+            'best_dev_loss',
+            'total_training_time_sec'
+        ]
+        
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        
+        if not file_exists:
+            writer.writeheader()
+        
+        writer.writerow({
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            'model_name': model_name,
+            'optimizer': optimizer_name,
+            'learning_rate': learning_rate,
+            'best_epoch': best_epoch,
+            'epochs_completed': epochs_completed,
+            'best_dev_accuracy': best_dev_accuracy,
+            'best_dev_loss': best_dev_loss,
+            'total_training_time_sec': round(total_training_time, 2)
+        })
+    
+    print(f"Résultats sauvegardés dans {csv_filepath}")
+    
+    # Sauvegarder les courbes d'apprentissage (epoch par epoch) dans un CSV
+    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+    learning_curves_filepath = os.path.join(results_dir, f'learning_curves_{model_name}_{timestamp_str}.csv')
+    
+    with open(learning_curves_filepath, 'w', newline='', encoding='utf-8') as csvfile:
+        fieldnames = ['epoch', 'train_accuracy', 'dev_accuracy', 'train_loss', 'dev_loss']
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        writer.writeheader()
+        
+        for i in range(len(train_acc_history)):
+            writer.writerow({
+                'epoch': i + 1,
+                'train_accuracy': train_acc_history[i],
+                'dev_accuracy': dev_acc_history[i],
+                'train_loss': train_loss_history[i],
+                'dev_loss': dev_loss_history[i]
+            })
+    
+    print(f"✓ Courbes d'apprentissage sauvegardées dans {learning_curves_filepath}")
+    
+    # Sauvegarder l'historique détaillé dans un fichier texte
+    history_filepath = os.path.join(results_dir, f'history_{model_name}_{timestamp_str}.txt')
+    
+    with open(history_filepath, 'w', encoding='utf-8') as f:
+        f.write(f"Historique d'entraînement - {model_name}\n")
+        f.write(f"{'='*60}\n")
+        f.write(f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        f.write(f"Optimizer: {optimizer_name}\n")
+        f.write(f"Learning Rate: {learning_rate}\n")
+        f.write(f"Meilleure époque: {best_epoch}\n")
+        f.write(f"Époques complétées: {epochs_completed}\n")
+        f.write(f"Meilleure accuracy dev: {best_dev_accuracy:.4f} ({best_dev_accuracy*100:.2f}%)\n")
+        f.write(f"Meilleure loss dev: {best_dev_loss:.4f}\n")
+        f.write(f"Temps total d'entraînement: {total_training_time:.2f} sec\n")
+        f.write(f"\n{'='*60}\n")
+        f.write(f"Historique par époque:\n")
+        f.write(f"{'Epoch':<8} {'Train Acc':<12} {'Dev Acc':<12} {'Train Loss':<12} {'Dev Loss':<12}\n")
+        f.write(f"{'-'*60}\n")
+        
+        for i in range(len(train_acc_history)):
+            f.write(f"{i+1:<8} {train_acc_history[i]:<12.4f} {dev_acc_history[i]:<12.4f} ")
+            f.write(f"{train_loss_history[i]:<12.4f} {dev_loss_history[i]:<12.4f}\n")
+    
+    print(f"✓ Historique détaillé sauvegardé dans {history_filepath}")
