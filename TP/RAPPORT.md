@@ -345,7 +345,8 @@ Parties:
 2-{'save_models_LSTMHiddenState_64model_43.pt': 5, 'save_models_LSTMHiddenState_64model_41.pt': 5}
 ```
 
-### Overfitting
+### Overfitting & Optimisations supplémentaires
+Pour ces optimisations, je vais utiliser uniquement l'optimizer Adam car c'est celui qui a donné les meilleurs résultats lors des tests précédents, cela me permettra de réduire le temps d'entraînement.
 
 #### LSTM optimisé
 J'ai aussi fait faire des parties entre le modèle LSTM optimisé et le modèle LSTM de base. Le modèle de base a gagné toutes les parties alors qu'il a un score bien moins bon. Je pense qu'il y a de l'overfitting sur le modèle optimisé, car il a été entraîné plus longtemps et a pu mieux mémoriser les parties du dataset d'entraînement.
@@ -432,20 +433,65 @@ Recalculing the best DEV: WAcc : 21.51%
 Fin entrainement LSTMHiddenState_Dropout_Tanh_Softmax_64 sur 20 epoch en (274, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
 ```
 
-J'avais retiré le softmax pour trouver le modèle le plus efficace en ayant le moins de complexité possible. En l'ajoutant, on voit que les scores diminuent. Cependant, peut-être qu'en ajoutant le softmax les paramètres optimaux du modèle changent et qu'on pourrait retrouver de meilleures performances en réoptimisant les paramètres.
+J'avais retiré le softmax pour le LSTMHiddenState. En le rajoutant, on voit que les scores diminuent.
 
-Je vais faire un gridsearch plus poussé pour trouver les meilleurs paramètres pour le modèle LSTM optimisé avec dropout de 0.2 et softmax.
+Je vais retenter un entraînement du modèle LSTM optimisé avec un dropout de 0.2 mais sans softmax en testant plusieurs configurations de couches.
+
+
+Tableau des résultats du grid search sur le LSTM optimisé avec les différentes architectures testées:
+| Nom du modèle                          | Optimizer | Dropout | Fonction d'activation | Temps d'entraînement (sc) | Batch size | Best learning Rate | Best Epoch | Accuracy train (%) | Accuracy dev (%) | Loss train | Loss dev | Date                   | Différence Accuracy train-dev (%) | Différence Loss dev-train (%) |
+|---------------------------------------|-----------|---------|-----------------------|---------------------------|------------|--------------------| ------------ |-------------------|------------------|------------|----------|------------------------|-----------------------------------|------------------------------|
+| LSTMHiddenState_Dropout_Relu_Gridsearch_64       | Adam      | 0.2     | Relu                  | 620.73                    | 128        | 0.005              | 20          | 34.83             | 30.8            | 2.3281     | 2.32     | 2026-01-08 10:04:42   | 4.03                              | 0.0081                       |
+| LSTMHiddenState_Dropout_Relu_Gridsearch_256      | Adam      | 0.2     | Relu                  | 542.9                     | 128        | 0.005              | 11          | 54.35             | 36.73           | 1.615      | 2.1172   | 2026-01-08 11:05:16   | 17.62                             | 0.5022                       |
+| LSTMHiddenState_Dropout_Relu_Gridsearch_512_256  | Adam      | 0.3     | Relu                  | 400.2                     | 256        | 0.005              | 14          | 75.46             | 35.29           | 0.9344     | 2.9477   | 2026-01-08 19:45:23   | 40.17                             | 2.0133                       |
+| LSTMHiddenState_Dropout_Relu_Gridsearch_512_256_128 | Adam | 0.2     | Relu                  | 974.52                    | 64         | 0.001              | 6           | 49.7              | 28.71           | 1.8241     | 2.6724   | 2026-01-07 23:40:28   | 20.99                             | 0.8483                       |
+| LSTMHiddenState_Dropout_Tanh_Gridsearch_64       | Adam      | 0.2     | Tanh                  | 615.17                    | 128        | 0.005              | 18          | 39.66             | 33.98           | 2.2305     | 2.221    | 2026-01-08 14:17:49   | 5.68                              | 0.0095                       |
+| LSTMHiddenState_Dropout_Tanh_Gridsearch_256      | Adam      | 0.3     | Tanh                  | 1026.71                   | 64         | 0.005              | 11          | 52.16             | 37.3            | 1.8576     | 2.1413   | 2026-01-08 05:14:27   | 14.86                             | 0.2837                       |
+| LSTMHiddenState_Dropout_Tanh_Gridsearch_512_256  | Adam      | 0.3     | Tanh                  | 716.91                    | 64         | 0.001              | 4           | 53.21             | 34.75           | 1.85       | 2.2339   | 2026-01-08 06:41:48   | 18.46                             | 0.3839                       |
+| LSTMHiddenState_Dropout_Tanh_Gridsearch_512_256_128 | Adam | 0.3     | Tanh                  | 888.6                     | 64         | 0.001              | 5           | 47.99             | 29.3            | 1.9892     | 2.6123   | 2026-01-08 08:48:17   | 18.69                             | 0.6231                       |
+
+À mon avis, le modèle LSTM optimisé avec l'architecture [256] et la fonction d'activation ReLU est le meilleur compromis entre performance et temps d'entraînement. Cependant, on observe toujours une différence significative entre l'accuracy sur le train set et le dev set, ce qui suggère qu'il y a encore de l'overfitting. Pour réduire davantage l'overfitting, il serait intéressant d'explorer des techniques supplémentaires telles que la régularisation L2 ou l'augmentation des données.
+
+J'ai tracé la courbe d'apprentissage du modèle LSTM optimisé avec l'architecture [256] et la fonction d'activation ReLU.
+![Courbes d'apprentissage LSTM optimisé - Architecture [256] + ReLU](results/plots\learning_curve_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_20260108_212121.png)
+
+On remarque qu'il y a toujours beaucoup d'overfitting. La différence entre l'accuracy sur le train set et le dev set est encore importante, ce qui indique que le modèle a du mal à généraliser aux données non vues. De plus, la loss sur le dev set stagne tandis que la loss sur le train set continue de diminuer, ce qui est un signe classique d'overfitting.
 
 #### MLP optimisé
-Comme le LSTM optimisé souffrait d'overfitting, j'ai fait la même analyse sur le MLP optimisé.
+Comme le LSTM optimisé souffrait d'overfitting, j'ai fait la même analyse sur le MLP optimisé. Le MLP optimisé a l'air d'avoir un comportement plus stable en partie, il ne perd pas contre le modèle LSTM de base comme le LSTM optimisé.
+
+J'ai décidé de faire un grid search sur différentes modèles de MLP pour voir si je peux améliorer ses performances. J'ai décidé, par contrainte de temps, de ne pas tester le batch size de 64 car ça augmente beaucoup trop le temps d'entraînement (ça a retiré 108 expériences à exécuter).
+
+
+Tableau des résultats du grid search sur le MLP optimisé avec les différentes architectures testées:
+| Nom du modèle                          | Optimizer | Dropout | Fonction d'activation | Temps d'entraînement (sc) | Batch size | Best learning Rate | Best Epoch | Accuracy train (%) | Accuracy dev (%) | Loss train | Loss dev | Date                   | Différence Accuracy train-dev (%) | Différence Loss dev-train (%) |
+|---------------------------------------|-----------|---------|-----------------------|---------------------------|------------|--------------------| ------------ |-------------------|------------------|------------|----------|------------------------|-----------------------------------|------------------------------|
+| MLP_64_Dropout_Gridsearch_Relu       | Adam      | 0.2     | Relu                  | 922.85                    | 128        | 0.001              | 18          | 24.26             | 23.53           | 2.9396     | 2.722    | 2026-01-07 21:03:53   | 0.73                              | 0.2176                       |
+| MLP_256_Dropout_Gridsearch_Relu      | Adam      | 0.4     | Relu                  | 525.66                    | 128        | 0.001              | 20          | 38.39             | 35.22           | 2.203      | 1.9754   | 2026-01-07 23:45:59   | 3.17                              | 0.2276                       |
+| MLP_256_128_Dropout_Gridsearch_Relu  | Adam     | 0.4     | Relu                  | 718.36                    | 128        | 0.001              | 20          | 34.13             | 30.67           | 2.5184     | 2.2755   | 2026-01-08 01:06:41   | 3.46                              | 0.2429                       |
+| MLP_512_256_Dropout_Gridsearch_Relu  | Adam      | 0.2     | Relu                  | 709.16                    | 128        | 0.001              | 20          | 43.85             | 35.84           | 2.1466     | 1.9854   | 2026-01-08 02:34:16   | 8.01                              | 0.1612                       |
+| MLP_512_256_128_Dropout_Gridsearch_Relu | Adam | 0.4     | Relu                  | 899.94                    | 128        | 0.001              | 20          | 38.09             | 31.75           | 2.4348     | 2.3264   | 2026-01-08 04:05:46   | 6.34                              | 0.1084                       |
+| MLP_512_256_128_64_Dropout_Gridsearch_Relu | Adam | 0.4     | Relu                  | 1082.85                   | 128        | 0.001              | 19          | 32.17             | 27.63           | 2.6893     | 2.5827   | 2026-01-08 05:51:02   | 4.54                              | 0.1066                       |
+| MLP_64_Dropout_Gridsearch_Tanh       | Adam      | 0.4     | Tanh                  | 528.29                    | 128        | 0.005              | 19          | 23.19             | 22.42           | 2.9964     | 2.8018   | 2026-01-08 08:06:02   | 0.77                              | 0.1946                       |
+| MLP_256_Dropout_Gridsearch_Tanh      | Adam      | 0.4     | Tanh                  | 523.34                    | 128        | 0.001              | 20          | 34.49             | 31.71           | 2.5426     | 2.2591   | 2026-01-08 09:15:09   | 2.78                              | 0.2835                       |
+| MLP_256_128_Dropout_Gridsearch_Tanh  | Adam     | 0.4     | Tanh                  | 698.05                    | 128        | 0.001              | 20          | 29.42             | 26.99           | 2.7871     | 2.5296   | 2026-01-08 10:35:42   | 2.43                              | 0.2575                       |
+| MLP_512_256_Dropout_Gridsearch_Tanh  | Adam      | 0.4     | Tanh                  | 702.4                     | 128        | 0.001              | 20          | 36.91             | 32.31           | 2.4729     | 2.201    | 2026-01-08 12:16:11   | 4.6                               | 0.2719                       |
+| MLP_512_256_128_Dropout_Gridsearch_Tanh | Adam | 0.4     | Tanh                  | 875.99                    | 128        | 0.001              | 20          | 31.94             | 28.04           | 2.6999     | 2.4422   | 2026-01-08 14:04:29   | 3.9                               | 0.2577                       |
+| MLP_512_256_128_64_Dropout_Gridsearch_Tanh | Adam | 0.4     | Tanh                  | 1056.46                   | 128        | 0.001              | 20          | 25.4              | 22.8            | 2.9199     | 2.7366   | 2026-01-08 16:01:31   | 2.6                               | 0.1833                       |
+
+Selon moi, le meilleur modèle est le MLP_512_256_Dropout_Gridsearch_Relu car il a la meilleure accuracy sur le dev set (35.84%) et une différence accuracy train-dev de 8.01% ce qui est acceptable. 
+
+![Courbes d'apprentissage MLP optimisé - Architecture [512, 256] + ReLU](results/plots\learning_curve_MLP_512_256_Dropout_Relu_Post_Optimisation_20260108_212338.png)
+
+On remarque que le MLP optimisé avec l'architecture [512, 256] et la fonction d'activation ReLU a un comportement plus stable que le LSTM optimisé. La différence entre l'accuracy sur le train set et le dev set est moindre, ce qui indique que le modèle généralise mieux aux données non vues. Cependant, il y a encore une certaine différence, suggérant qu'il pourrait y avoir un léger overfitting.
+
+#### Test des modèles optimisés en partie
+Les modèles ont toujours des performances en parties qui sont pas en accord avec leurs performances sur le dev set. Je pense que malgré le fait que j'ai réduit l'overfitting, il en reste encore un peu. Par exemple, le modèle LSTM optimisé et le modèle MLP optimisé ont des accuracies respectives de 36.73% et 35.84% sur le dev set, mais lors des parties jouées, ils ont gagné 50/10 parties chacun à chaque fois.
+
+Je vais donc passer au CNN pour voir si je peux obtenir de meilleures performances et je ferais l'augmentation des données après ça.
 
 # Conclusion de l'optimisation
-Après avoir optimisé les architectures et les paramètres d'entraînement des modèles MLP et LSTM, il est clair que le modèle LSTM avec hidden state surpasse largement le modèle MLP en termes de performance. Le modèle LSTM optimisé a atteint une accuracy de 36.49% sur le dev set, contre 16.75% pour le modèle MLP optimisé. De plus, lors des parties jouées, le modèle LSTM a remporté toutes les confrontations contre le modèle MLP, démontrant sa supériorité dans ce contexte.
-
-# Augmentation des données TODO
-Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.
-
-Je vais aussi prendre les données actuelles et faire des transformations simples pour augmenter le dataset, comme des rotations et des réflexions du plateau de jeu.
+Après avoir optimisé les modèles MLP et LSTM, j'ai constaté que le modèle LSTM optimisé avec l'architecture [256] et la fonction d'activation ReLU offre les meilleures performances, avec une accuracy de 36.73% sur le dev set. Cependant, il souffre encore d'overfitting, comme en témoigne la différence significative entre l'accuracy sur le train set et le dev set. Le modèle MLP optimisé avec l'architecture [512, 256] et la fonction d'activation ReLU présente également de bonnes performances, avec une accuracy de 35.84% sur le dev set, et un comportement plus stable en termes de généralisation. Cependant, les performances en parties jouées ne sont pas entièrement cohérentes avec les performances sur le dev set.
 
 # CNN TODO
 
@@ -453,3 +499,10 @@ Je vais aussi prendre les données actuelles et faire des transformations simple
 
 # Transformer TODO
 
+# Augmentation des données TODO
+Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.
+
+Je vais aussi prendre les données actuelles et faire des transformations simples pour augmenter le dataset, comme des rotations et des réflexions du plateau de jeu.
+
+# Utilisation GPU/CPU
+Lors de l'entrainement, mon GPU est faiblement utilisé (7%). Le CPU lui a des piques à 100% mais en moyenne il est à 15%. Je pense qu'il y a un problème de lenteur au chargement des données. Quand j'augmente le batch size, le temps d'entrainement diminue mais la précision du modèle est impactée négativement. Je pense que le goulot d'étranglement vient du CPU qui n'arrive pas à fournir les données assez rapidement au GPU.

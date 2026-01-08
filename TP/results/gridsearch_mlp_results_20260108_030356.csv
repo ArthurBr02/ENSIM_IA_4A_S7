@@ -1,0 +1,2 @@
+model,learning_rate,optimizer,dropout,batch_size,best_epoch,training_time,num_parameters,timestamp
+MLP_512_256_Dropout_Gridsearch_Relu,0.001,Adam,0.3,128,20,711.9683408737183,181056,2026-01-08 03:03:56

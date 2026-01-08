@@ -1,5 +1,6 @@
 import h5py
 import numpy as np
+import torch
 from tqdm import tqdm
 import copy
 from utile import has_tile_to_flip,isBlackWinner,initialze_board,BOARD_SIZE
@@ -40,13 +41,13 @@ class SampleManager():
         self.len_moves=len_moves
         self.isBlackPlayer=isBlackPlayer
     
-    def set_file_dir(file_dir):
+    def set_file_dir(self, file_dir):
         self.file_dir=file_dir
-    def set_game_name(game_name):
+    def set_game_name(self, game_name):
         self.game_name=game_name
-    def set_end_move(end_move):
+    def set_end_move(self, end_move):
         self.end_move=end_move
-    def set_len_moves(len_moves):
+    def set_len_moves(self, len_moves):
         self.len_moves=len_moves
 
 class CustomDatasetMany(Dataset):
@@ -76,8 +77,9 @@ class CustomDatasetMany(Dataset):
         self.game_files_name=list_files#[s + ".h5" for s in list_files]       
         
         if self.load_data_once4all:
-            self.samples=np.zeros((len(self.game_files_name)*30,self.len_samples,8,8), dtype=int)
-            self.outputs=np.zeros((len(self.game_files_name)*30,8*8), dtype=int)
+            # Utiliser float32 au lieu de int pour PyTorch
+            self.samples=np.zeros((len(self.game_files_name)*30,self.len_samples,8,8), dtype=np.float32)
+            self.outputs=np.zeros((len(self.game_files_name)*30,8*8), dtype=np.float32)
             idx=0
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
 
@@ -104,9 +106,9 @@ class CustomDatasetMany(Dataset):
 
                     #if black is the current player the board should be multiplay by -1    
                     if is_black_winner:       
-                        features=np.array([features],dtype=int)*-1
+                        features=np.array([features],dtype=np.float32)*-1
                     else:
-                        features=np.array([features],dtype=int)    
+                        features=np.array([features],dtype=np.float32)    
                         
                     self.samples[idx]=features
                     self.outputs[idx]=np.array(game_log[1][end_move]).flatten()
@@ -142,8 +144,9 @@ class CustomDatasetMany(Dataset):
         
         
         if self.load_data_once4all:
-            features=self.samples[idx]
-            y=self.outputs[idx]
+            # Retourner directement les tensors sans conversion
+            features = self.samples[idx]
+            y = self.outputs[idx]
         else:
             game_log=load_game_log(self.samples[idx].file_dir+self.samples[idx].game_name)
             if self.samples[idx].end_move+1 >= self.samples[idx].len_moves:

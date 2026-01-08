@@ -1,0 +1,22 @@
+Historique d'entraînement - MLP_512_256_128_Dropout_Gridsearch_Relu
+============================================================
+Date: 2026-01-08 05:00:37
+Optimizer: Adam
+Learning Rate: 0.01
+Meilleure époque: 1
+Époques complétées: 7
+Meilleure accuracy dev: 0.0962 (9.62%)
+Meilleure loss dev: 3.4928
+Temps total d'entraînement: 318.30 sec
+
+============================================================
+Historique par époque:
+Epoch    Train Acc    Dev Acc      Train Loss   Dev Loss    
+------------------------------------------------------------
+1        0.0995       0.0962       3.6173       3.4928      
+2        0.1005       0.0945       3.5779       3.4966      
+3        0.0994       0.0935       3.5810       3.5130      
+4        0.0991       0.0953       3.6086       3.5434      
+5        0.0972       0.0921       3.6142       3.5645      
+6        0.0989       0.0933       3.6314       3.5755      
+7        0.0979       0.0916       3.6258       3.5564      

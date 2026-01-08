@@ -1,0 +1,2 @@
+model,learning_rate,optimizer,dropout,batch_size,best_epoch,training_time,num_parameters,timestamp
+MLP_512_256_128_Dropout_Gridsearch_Tanh,0.001,Adam,0.4,128,20,877.2964153289795,205760,2026-01-08 15:25:31

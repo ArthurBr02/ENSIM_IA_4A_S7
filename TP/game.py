@@ -86,135 +86,135 @@ def apply_flip(best_move,board_stat,NgBlackPsWhith):
     return board_stat
 
     
-
-if torch.cuda.is_available():
-    device = torch.device("cuda:0")
-else:
-    device = torch.device("cpu")
-
-win = {}
-for g in range(10):
-    # Two rounds of game would be played
-    # First player1 starts game, and then Player2 starts the other game
-    if g%2 == 0:
-        conf={}
-        conf['player1']= sys.argv[1]
-        conf['player2']= sys.argv[2]
+if __name__ == "__main__":
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
     else:
-        conf={}
-        conf['player2']= sys.argv[1]
-        conf['player1']= sys.argv[2]    
+        device = torch.device("cpu")
 
-    board_stat=initialze_board()
+    win = {}
+    for g in range(10):
+        # Two rounds of game would be played
+        # First player1 starts game, and then Player2 starts the other game
+        if g%2 == 0:
+            conf={}
+            conf['player1']= sys.argv[1]
+            conf['player2']= sys.argv[2]
+        else:
+            conf={}
+            conf['player2']= sys.argv[1]
+            conf['player1']= sys.argv[2]    
 
-    moves_log=""
-    board_stats_seq=[]
-    pass2player=False
+        board_stat=initialze_board()
 
-    while not np.all(board_stat) and not pass2player:
+        moves_log=""
+        board_stats_seq=[]
+        pass2player=False
 
-        NgBlackPsWhith=-1
+        while not np.all(board_stat) and not pass2player:
+
+            NgBlackPsWhith=-1
+            board_stats_seq.append(copy.copy(board_stat))
+            if torch.cuda.is_available():
+                model = torch.load(conf['player1'],weights_only=False)
+            else:
+                model = torch.load(conf['player1'],map_location=torch.device('cpu'),weights_only=False)
+            model.eval()
+
+            input_seq_boards=input_seq_generator(board_stats_seq,model.len_inpout_seq)
+            #if black is the current player the board should be multiplay by -1
+            model_input=np.array([input_seq_boards])*-1
+            move1_prob = model(torch.tensor(model_input).float().to(device))
+            move1_prob=move1_prob.cpu().detach().numpy().reshape(8,8)
+
+            legal_moves=get_legal_moves(board_stat,NgBlackPsWhith)
+
+            if len(legal_moves)>0:
+                
+                best_move=find_best_move(move1_prob,legal_moves)
+                print(f"Black: {best_move} < from possible move {legal_moves}")
+
+                board_stat[best_move[0],best_move[1]]=NgBlackPsWhith
+                moves_log+=str(best_move[0]+1)+str(best_move[1]+1)
+                
+                board_stat=apply_flip(best_move,board_stat,NgBlackPsWhith)
+
+            else:
+                print("Black pass")
+                if moves_log[-2:]=="__":
+                    pass2player=True
+                moves_log+="__"
+
+
+            NgBlackPsWhith=+1
+            board_stats_seq.append(copy.copy(board_stat))
+            if torch.cuda.is_available():
+                model = torch.load(conf['player2'],weights_only=False)
+            else:
+                model = torch.load(conf['player2'],map_location=torch.device('cpu'),weights_only=False)
+            model.eval()
+
+            input_seq_boards=input_seq_generator(board_stats_seq,model.len_inpout_seq)
+            #if black is the current player the board should be multiplay by -1
+            model_input=np.array([input_seq_boards])
+            move1_prob = model(torch.tensor(model_input).float().to(device))
+            move1_prob=move1_prob.cpu().detach().numpy().reshape(8,8)
+
+            legal_moves=get_legal_moves(board_stat,NgBlackPsWhith)
+
+
+            if len(legal_moves)>0:
+                
+                best_move = find_best_move(move1_prob,legal_moves)
+                print(f"White: {best_move} < from possible move {legal_moves}")
+                
+                board_stat[best_move[0],best_move[1]]=NgBlackPsWhith
+                moves_log+=str(best_move[0]+1)+str(best_move[1]+1)
+                
+                board_stat=apply_flip(best_move,board_stat,NgBlackPsWhith)
+
+            else:
+                print("White pass")
+                if moves_log[-2:]=="__":
+                    pass2player=True
+                moves_log+="__"
+
         board_stats_seq.append(copy.copy(board_stat))
-        if torch.cuda.is_available():
-            model = torch.load(conf['player1'],weights_only=False)
+        print("Moves log:",moves_log)
+
+        if np.sum(board_stat)<0:
+            model_name = conf['player1'].replace('\\', '')
+            if not win.get(model_name):
+                win[model_name] = 0
+            win[model_name] += 1
+
+            print(f"Black {conf['player1']} is winner (with {-1*int(np.sum(board_stat))} points)")
+        elif np.sum(board_stat)>0:
+            model_name = conf['player2'].replace('\\', '')
+            if not win.get(model_name):
+                win[model_name] = 0
+            win[model_name] += 1
+
+            print(f"White {conf['player2']} is winner (with {int(np.sum(board_stat))} points)")
         else:
-            model = torch.load(conf['player1'],map_location=torch.device('cpu'),weights_only=False)
-        model.eval()
+            print(f"Draw")
 
-        input_seq_boards=input_seq_generator(board_stats_seq,model.len_inpout_seq)
-    	#if black is the current player the board should be multiplay by -1
-        model_input=np.array([input_seq_boards])*-1
-        move1_prob = model(torch.tensor(model_input).float().to(device))
-        move1_prob=move1_prob.cpu().detach().numpy().reshape(8,8)
+        #save game log in gif file
+        fig,ax = plt.subplots()
+        ims = []
+        for i in range(len(board_stats_seq)):
+            im = plt.imshow(board_stats_seq[i]*-1,
+                            extent=[0.5,8.5,0.5,8.5],
+                            cmap='binary',
+                            interpolation='nearest')
+            ims.append([im])
+        ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
+                                        repeat_delay=1000)   
+        ani.save(f"games/game_{g}.gif", writer='imagemagick', fps=0.8)
 
-        legal_moves=get_legal_moves(board_stat,NgBlackPsWhith)
+    print(win)
 
-        if len(legal_moves)>0:
-            
-            best_move=find_best_move(move1_prob,legal_moves)
-            print(f"Black: {best_move} < from possible move {legal_moves}")
-
-            board_stat[best_move[0],best_move[1]]=NgBlackPsWhith
-            moves_log+=str(best_move[0]+1)+str(best_move[1]+1)
-            
-            board_stat=apply_flip(best_move,board_stat,NgBlackPsWhith)
-
-        else:
-            print("Black pass")
-            if moves_log[-2:]=="__":
-                pass2player=True
-            moves_log+="__"
-
-
-        NgBlackPsWhith=+1
-        board_stats_seq.append(copy.copy(board_stat))
-        if torch.cuda.is_available():
-            model = torch.load(conf['player2'],weights_only=False)
-        else:
-            model = torch.load(conf['player2'],map_location=torch.device('cpu'),weights_only=False)
-        model.eval()
-
-        input_seq_boards=input_seq_generator(board_stats_seq,model.len_inpout_seq)
-        #if black is the current player the board should be multiplay by -1
-        model_input=np.array([input_seq_boards])
-        move1_prob = model(torch.tensor(model_input).float().to(device))
-        move1_prob=move1_prob.cpu().detach().numpy().reshape(8,8)
-
-        legal_moves=get_legal_moves(board_stat,NgBlackPsWhith)
-
-
-        if len(legal_moves)>0:
-            
-            best_move = find_best_move(move1_prob,legal_moves)
-            print(f"White: {best_move} < from possible move {legal_moves}")
-            
-            board_stat[best_move[0],best_move[1]]=NgBlackPsWhith
-            moves_log+=str(best_move[0]+1)+str(best_move[1]+1)
-            
-            board_stat=apply_flip(best_move,board_stat,NgBlackPsWhith)
-
-        else:
-            print("White pass")
-            if moves_log[-2:]=="__":
-                pass2player=True
-            moves_log+="__"
-
-    board_stats_seq.append(copy.copy(board_stat))
-    print("Moves log:",moves_log)
-
-    if np.sum(board_stat)<0:
-        model_name = conf['player1'].replace('\\', '')
-        if not win.get(model_name):
-            win[model_name] = 0
-        win[model_name] += 1
-
-        print(f"Black {conf['player1']} is winner (with {-1*int(np.sum(board_stat))} points)")
-    elif np.sum(board_stat)>0:
-        model_name = conf['player2'].replace('\\', '')
-        if not win.get(model_name):
-            win[model_name] = 0
-        win[model_name] += 1
-
-        print(f"White {conf['player2']} is winner (with {int(np.sum(board_stat))} points)")
-    else:
-        print(f"Draw")
-
-    #save game log in gif file
-    fig,ax = plt.subplots()
-    ims = []
-    for i in range(len(board_stats_seq)):
-        im = plt.imshow(board_stats_seq[i]*-1,
-                        extent=[0.5,8.5,0.5,8.5],
-                        cmap='binary',
-                        interpolation='nearest')
-        ims.append([im])
-    ani = animation.ArtistAnimation(fig, ims, interval=50, blit=True,
-                                    repeat_delay=1000)   
-    ani.save(f"games/game_{g}.gif", writer='imagemagick', fps=0.8)
-
-print(win)
-
-# Enregistrement des points
-with open(f"games/points_{conf['player1'].replace('\\', '')}_vs_{conf['player2'].replace('\\', '')}.txt", "w") as f:
-    for model_name, points in win.items():
-        f.write(f"{model_name}: {points} points\n")
+    # Enregistrement des points
+    with open(f"games/points_{conf['player1'].replace('\\', '')}_vs_{conf['player2'].replace('\\', '')}.txt", "w") as f:
+        for model_name, points in win.items():
+            f.write(f"{model_name}: {points} points\n")
