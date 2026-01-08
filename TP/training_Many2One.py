@@ -4,11 +4,11 @@ from torch.utils.data import DataLoader
 from torch.nn.modules.rnn import LSTM
 from torch.nn.modules.linear import Linear
 
-from data import CustomDatasetMany
+from data import *
 from utile import BOARD_SIZE
 from networks_2100078 import *
 
-torch.serialization.add_safe_globals([LSTMs, LSTM, Linear, LSTMHiddenState_Dropout_512_256_128, LSTMHiddenState_Dropout_Relu_Softmax_Gridsearch_64, LSTMHiddenState_Dropout_Tanh_Softmax_Gridsearch_64, LSTMHiddenState_Dropout_64, LSTMHiddenState_Dropout_Relu_Softmax_64, LSTMHiddenState_Dropout_Tanh_Softmax_64, LSTMHiddenState_Dropout_Relu_64, LSTMHiddenState_Dropout_Tanh_64, LSTMHiddenState_64, LSTMOutputSequence_64, LSTMOutputSequence_256, LSTMOutputSequence_512_256, LSTMOutputSequence_512_256_128, LSTMHiddenState_256, LSTMHiddenState_512_256, LSTMHiddenState_512_256_128])
+torch.serialization.add_safe_globals([LSTMs, LSTM, Linear, LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs, LSTMHiddenState_Dropout_512_256_128, LSTMHiddenState_Dropout_Relu_Softmax_Gridsearch_64, LSTMHiddenState_Dropout_Tanh_Softmax_Gridsearch_64, LSTMHiddenState_Dropout_64, LSTMHiddenState_Dropout_Relu_Softmax_64, LSTMHiddenState_Dropout_Tanh_Softmax_64, LSTMHiddenState_Dropout_Relu_64, LSTMHiddenState_Dropout_Tanh_64, LSTMHiddenState_64, LSTMOutputSequence_64, LSTMOutputSequence_256, LSTMOutputSequence_512_256, LSTMOutputSequence_512_256_128, LSTMHiddenState_256, LSTMHiddenState_512_256, LSTMHiddenState_512_256_128])
 
 
 if torch.cuda.is_available():
@@ -26,10 +26,10 @@ dataset_conf["filelist"]="train.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=128
+dataset_conf['batch_size']=512
 
 print("Training Dataste ... ")
-ds_train = CustomDatasetMany(dataset_conf, load_data_once4all=True)
+ds_train = CustomDatasetManyAugmented(dataset_conf, load_data_once4all=True)
 trainSet = DataLoader(ds_train,
                       batch_size=dataset_conf['batch_size'])
 
@@ -39,10 +39,10 @@ dataset_conf["filelist"]="dev.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=128
+dataset_conf['batch_size']=512
 
 print("Development Dataste ... ")
-ds_dev = CustomDatasetMany(dataset_conf, load_data_once4all=True)
+ds_dev = CustomDatasetManyAugmented(dataset_conf, load_data_once4all=True)
 devSet = DataLoader(ds_dev,
                     batch_size=dataset_conf['batch_size'])
 
@@ -68,7 +68,7 @@ for dropout in dropouts:
 
     for optimizer in optimizers:
         for lr in learning_rates:
-            model = LSTMHiddenState_Dropout_Relu_256_Post_Optimisation(conf).to(device)
+            model = LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs(conf).to(device)
             print(model)
 
             n = count_parameters(model)

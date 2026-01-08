@@ -1,2 +1,2 @@
-bagarrelucas_cnn_model_20_40prct.pt: 5 points
 bagarrearthur_cnn_model_20_41prct.pt: 5 points
+save_models_LSTMmodel_1.pt: 3 points

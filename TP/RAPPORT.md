@@ -500,10 +500,34 @@ Après avoir optimisé les modèles MLP et LSTM, j'ai constaté que le modèle L
 # Transformer TODO
 
 # Augmentation des données TODO
+
+## Transformations
 Pour augmenter les données, j'ai modifié les classes de Dataset dans data.py pour faire des opérations simples sur les parties à leur chargement:
 - Rotations (90, 180, 270 degrés)
 - Symétrie
-Le dataset a été multiplié par 8 grâce à ces transformations.
+Le dataset a été démultiplié grâce à ces transformations (il y a actuellement 1440240 samples dans le train set contre 180030 avant augmentation).
+
+J'ai donc réentraîné les modèles optimisés LSTM et MLP avec ce nouveau dataset augmenté.
+
+### LSTM optimisé avec données augmentées
+```logs
+TODO
+```
+
+TODO: insérer les logs et la courbe d'apprentissage du LSTM optimisé avec données augmentées + analyse
+
+### MLP optimisé avec données augmentées
+```logs
+Recalculing the best DEV: WAcc : 38.403333333333336%
+Fin entrainement MLP_512_256_Dropout_Relu_Post_Optimisation sur 20 epoch en (3188.7968485355377, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.3
+```
+
+![Courbes d'apprentissage LSTM optimisé avec données augmentées](results/plots\learning_curve_MLP_512_256_Dropout_Relu_Post_Optimisation_20260108_234222.png)
+
+Grâce à la courbe d'apprentissage, on peut remarquer que l'overfitting est quasiment nul sur cet entrainement avec un très bon score de 38% par rapport à avant.
+Cependant, le temps d'entraînement a énormément augmenté (3188sc contre 709sc avant augmentation des données).
+
+## Génération de parties TODO
 
 Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.
 

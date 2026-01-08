@@ -1,0 +1,1 @@
+bagarrearthur_cnn_model_20_41prct.pt: 10 points

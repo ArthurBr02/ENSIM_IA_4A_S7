@@ -650,6 +650,69 @@ class LSTMHiddenState_Dropout_Relu_256_Post_Optimisation(nn.Module):
     
     def evalulate(self,test_loader, device):
         return evaluate(self, test_loader, device)
+    
+"""
+[256],              # 1 couche
+"""
+class LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [256] - 1 couche with Dropout and ReLU
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [256]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 256, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(256*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = F.relu(hidden_concat)  # Activation
+        
+        # Utiliser hidden_concat au lieu de lstm_out
+        outp = self.hidden2output(hidden_concat)
+
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
 
 """
 [512, 256, 128],              # 3 couches
@@ -3818,7 +3881,7 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
 
         if acc_dev > best_dev or best_dev == 0.0:
             notchange=0
-            torch.save(self, self.path_save + '/model_' + str(epoch) + '.pt')
+            torch.save(self, self.path_save + '/model_' + str(epoch) + '_' + str(time.time()) + '.pt')
             best_dev = acc_dev
             best_dev_loss = avg_dev_loss
             best_epoch = epoch
@@ -3831,7 +3894,7 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
         
         print("*"*15,f"The best score on DEV {best_epoch} :{round(100*best_dev,3)}%")
 
-    self = torch.load(self.path_save + '/model_' + str(best_epoch) + '.pt', weights_only=False)
+    self = torch.load(self.path_save + '/model_' + str(best_epoch) + '_' + str(time.time()) + '.pt', weights_only=False)
     self.eval()
     _clas_rep = self.evalulate(dev, device)
     final_dev_acc = _clas_rep['weighted avg']['recall']
