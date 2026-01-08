@@ -1,0 +1,1 @@
+bagarrelucas_cnn_model_5_47prct.pt: 10 points

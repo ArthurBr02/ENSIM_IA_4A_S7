@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import DataLoader
 
-from data import CustomDatasetOne
+from data import *
 from utile import BOARD_SIZE
 from networks_2100078 import *
 
@@ -27,10 +27,10 @@ dataset_conf["filelist"]="train.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=128
+dataset_conf['batch_size']=256
 
 print("Training Dataste ... ")
-ds_train = CustomDatasetOne(dataset_conf,load_data_once4all=True)
+ds_train = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
 trainSet = DataLoader(ds_train, 
                       batch_size=dataset_conf['batch_size'])
 
@@ -40,10 +40,10 @@ dataset_conf["filelist"]="dev.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=128
+dataset_conf['batch_size']=256
 
 print("Development Dataste ... ")
-ds_dev = CustomDatasetOne(dataset_conf,load_data_once4all=True)
+ds_dev = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
 devSet = DataLoader(ds_dev, 
                     batch_size=dataset_conf['batch_size'])
 

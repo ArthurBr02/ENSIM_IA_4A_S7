@@ -1,144 +1,365 @@
+"""
+Script pour générer des fichiers .h5 contenant des parties d'Othello
+en faisant jouer 2 modèles entre eux.
+
+Usage:
+    python generate_h5_files_from_games.py <model1_path> <model2_path> <num_games> <output_dir>
+    
+Exemple:
+    python generate_h5_files_from_games.py save_models_MLP/best_model.pth save_models_CNN_32_Dropout_Gridsearch_Relu/best_model.pth 10 generated_dataset/
+"""
+
 import numpy as np
 import torch
 import h5py
+import sys
 import copy
-import time
-from utile import get_legal_moves, initialze_board, has_tile_to_flip
-from game import input_seq_generator, find_best_move, apply_flip
+import os
+from tqdm import tqdm
+from utile import get_legal_moves, initialze_board
 
-def save_game_to_h5(board_stats_seq, moves_log, game_id, output_dir="dataset/"):
+
+def input_seq_generator(board_stats_seq, length_seq):
     """
-    Sauvegarde une bataille en fichier .h5
+    Génère une séquence d'états de plateau pour l'entrée du modèle.
     
     Parameters:
-    - board_stats_seq: liste des états du plateau
-    - moves_log: chaîne des coups joués (ex: "4455...")
-    - game_id: identifiant unique du jeu
-    - output_dir: dossier de destination
+    - board_stats_seq (list): Séquence d'états de plateau.
+    - length_seq (int): Longueur de la séquence à générer.
+    
+    Returns:
+    - list: Séquence d'états de plateau de longueur length_seq.
     """
-    # Convertir moves_log en grilles 8x8 avec un 1 à la position du coup
-    max_moves = 60  # Longueur fixe comme dans les fichiers existants
-    moves_grids = np.zeros((max_moves, 8, 8), dtype=np.int8)
-    
-    move_idx = 0
-    for i in range(0, len(moves_log), 2):
-        if move_idx >= max_moves:
-            break
-            
-        if moves_log[i:i+2] != "__":
-            row = int(moves_log[i]) - 1
-            col = int(moves_log[i+1]) - 1
-            moves_grids[move_idx, row, col] = 1
-        # Pour les "pass", on laisse la grille à zéros
-        move_idx += 1
-    
-    # Padder board_stats_seq pour avoir exactement max_moves états
-    boards_array = np.zeros((max_moves, 8, 8), dtype=np.int8)
-    num_boards = min(len(board_stats_seq), max_moves)
-    for i in range(num_boards):
-        boards_array[i] = board_stats_seq[i]
-    
-    # Créer le tableau final avec shape (2, 60, 8, 8)
-    game_data = np.array([boards_array, moves_grids], dtype=np.int8)
-    
-    # Sauvegarder dans un fichier .h5
-    file_path = f"{output_dir}{game_id}.h5"
-    with h5py.File(file_path, 'w') as h5f:
-        h5f.create_dataset(str(game_id), data=game_data)
-    
-    print(f"Bataille sauvegardée : {file_path}")
-    return file_path
+    board_stat_init = initialze_board()
 
-def generate_battle_dataset(player1_path, player2_path, num_games=10, output_dir="dataset/"):
-    """
-    Génère plusieurs batailles entre deux modèles et les sauvegarde en .h5
-    
-    Parameters:
-    - player1_path: chemin du modèle 1
-    - player2_path: chemin du modèle 2
-    - num_games: nombre de parties à jouer
-    - output_dir: dossier de sortie
-    """
-    
-    if torch.cuda.is_available():
-        device = torch.device("cuda:0")
+    if len(board_stats_seq) >= length_seq:
+        input_seq = board_stats_seq[-length_seq:]
     else:
-        device = torch.device("cpu")
+        input_seq = [board_stat_init]
+        # Padding avec l'état initial du plateau
+        for i in range(length_seq - len(board_stats_seq) - 1):
+            input_seq.append(board_stat_init)
+        # Ajouter les états de la partie
+        for i in range(len(board_stats_seq)):
+            input_seq.append(board_stats_seq[i])
+            
+    return input_seq
+
+
+def find_best_move(move_prob, legal_moves):
+    """
+    Trouve le meilleur coup basé sur les probabilités et les coups légaux.
     
-    for g in range(num_games):
-        # Alterner qui commence
-        if g % 2 == 0:
-            conf = {'player1': player1_path, 'player2': player2_path}
-        else:
-            conf = {'player1': player2_path, 'player2': player1_path}
-        
-        board_stat = initialze_board()
-        moves_log = ""
-        board_stats_seq = []
-        pass2player = False
-        
-        # Jouer la partie
-        while not np.all(board_stat) and not pass2player:
-            # Tour du joueur noir
-            NgBlackPsWhith = -1
-            board_stats_seq.append(copy.copy(board_stat))
-            
-            model = torch.load(conf['player1'], map_location=device, weights_only=False)
-            model.eval()
-            
-            input_seq_boards = input_seq_generator(board_stats_seq, model.len_inpout_seq)
-            model_input = np.array([input_seq_boards]) * -1
-            move1_prob = model(torch.tensor(model_input).float().to(device))
-            move1_prob = move1_prob.cpu().detach().numpy().reshape(8, 8)
-            
-            legal_moves = get_legal_moves(board_stat, NgBlackPsWhith)
-            
-            if len(legal_moves) > 0:
-                best_move = find_best_move(move1_prob, legal_moves)
-                board_stat[best_move[0], best_move[1]] = NgBlackPsWhith
-                moves_log += str(best_move[0] + 1) + str(best_move[1] + 1)
-                board_stat = apply_flip(best_move, board_stat, NgBlackPsWhith)
+    Parameters:
+    - move_prob (numpy.ndarray): Matrice 2D des probabilités des coups.
+    - legal_moves (list): Liste des coups légaux.
+    
+    Returns:
+    - tuple: Coordonnées (row, col) du meilleur coup.
+    """
+    best_move = legal_moves[0]
+    max_score = move_prob[legal_moves[0][0], legal_moves[0][1]]
+    
+    for move in legal_moves:
+        if move_prob[move[0], move[1]] > max_score:
+            max_score = move_prob[move[0], move[1]]
+            best_move = move
+    
+    return best_move
+
+
+def has_tile_to_flip(best_move, direction, board_stat, NgBlackPsWhith):
+    """
+    Vérifie s'il y a des pions à retourner dans une direction donnée.
+    """
+    from utile import is_valid_coord
+    
+    i = 1
+    if is_valid_coord(best_move[0], best_move[1]):
+        while True:
+            row = best_move[0] + direction[0] * i
+            col = best_move[1] + direction[1] * i
+            if not is_valid_coord(row, col) or board_stat[row][col] == 0:
+                return False
+            elif board_stat[row][col] == NgBlackPsWhith:
+                break
             else:
-                if moves_log[-2:] == "__":
-                    pass2player = True
-                moves_log += "__"
-            
-            # Tour du joueur blanc
-            NgBlackPsWhith = +1
-            board_stats_seq.append(copy.copy(board_stat))
-            
-            model = torch.load(conf['player2'], map_location=device, weights_only=False)
-            model.eval()
-            
-            input_seq_boards = input_seq_generator(board_stats_seq, model.len_inpout_seq)
-            model_input = np.array([input_seq_boards])
-            move1_prob = model(torch.tensor(model_input).float().to(device))
-            move1_prob = move1_prob.cpu().detach().numpy().reshape(8, 8)
-            
-            legal_moves = get_legal_moves(board_stat, NgBlackPsWhith)
-            
-            if len(legal_moves) > 0:
-                best_move = find_best_move(move1_prob, legal_moves)
-                board_stat[best_move[0], best_move[1]] = NgBlackPsWhith
-                moves_log += str(best_move[0] + 1) + str(best_move[1] + 1)
-                board_stat = apply_flip(best_move, board_stat, NgBlackPsWhith)
-            else:
-                if moves_log[-2:] == "__":
-                    pass2player = True
-                moves_log += "__"
-        
+                i += 1
+    return i > 1
+
+
+def apply_flip(best_move, board_stat, NgBlackPsWhith):
+    """
+    Applique le retournement des pions sur le plateau.
+    
+    Parameters:
+    - best_move (tuple): Coordonnées (row, col) du coup joué.
+    - board_stat (numpy.ndarray): État actuel du plateau.
+    - NgBlackPsWhith (int): Indicateur du joueur (-1 pour Noir, 1 pour Blanc).
+    
+    Returns:
+    - numpy.ndarray: Plateau mis à jour après retournement des pions.
+    """
+    MOVE_DIRS = [(-1, -1), (-1, 0), (-1, +1),
+                 (0, -1),           (0, +1),
+                 (+1, -1), (+1, 0), (+1, +1)]
+
+    for direction in MOVE_DIRS:
+        if has_tile_to_flip(best_move, direction, board_stat, NgBlackPsWhith):
+            i = 1
+            while True:
+                row = best_move[0] + direction[0] * i
+                col = best_move[1] + direction[1] * i
+                if board_stat[row][col] == board_stat[best_move[0], best_move[1]]:
+                    break
+                else:
+                    board_stat[row][col] = board_stat[best_move[0], best_move[1]]
+                    i += 1
+                    
+    return board_stat
+
+
+def play_game(model1, model2, device, verbose=False):
+    """
+    Fait jouer une partie entre deux modèles.
+    
+    Parameters:
+    - model1 (torch.nn.Module): Modèle pour le joueur Noir.
+    - model2 (torch.nn.Module): Modèle pour le joueur Blanc.
+    - device (torch.device): Device pour l'exécution (CPU ou CUDA).
+    - verbose (bool): Afficher les détails de la partie.
+    
+    Returns:
+    - tuple: (board_stats_seq, moves_prob_seq) où:
+        - board_stats_seq: Liste de tous les états du plateau (60 max).
+        - moves_prob_seq: Liste de toutes les probabilités de coups (60 max).
+    """
+    board_stat = initialze_board()
+    board_stats_seq = []
+    moves_prob_seq = []
+    pass_count = 0
+    
+    model1.eval()
+    model2.eval()
+    
+    # Récupérer len_inpout_seq ou utiliser 1 par défaut
+    len_seq_model1 = getattr(model1, 'len_inpout_seq', 1)
+    len_seq_model2 = getattr(model2, 'len_inpout_seq', 1)
+    
+    while len(board_stats_seq) < 60 and pass_count < 2:
+        # Tour du joueur Noir (model1)
+        NgBlackPsWhith = -1
         board_stats_seq.append(copy.copy(board_stat))
         
-        # Générer un ID unique pour le jeu
-        timestamp = int(time.time() * 1000)
-        game_id = f"{timestamp}_{g}"
+        input_seq_boards = input_seq_generator(board_stats_seq, len_seq_model1)
+        # Si Noir est le joueur actuel, multiplier le plateau par -1
+        model_input = np.array([input_seq_boards]) * -1
+        move_prob = model1(torch.tensor(model_input).float().to(device))
+        move_prob = move_prob.cpu().detach().numpy().reshape(8, 8)
         
-        # Sauvegarder en .h5
-        save_game_to_h5(board_stats_seq, moves_log, game_id, output_dir)
+        legal_moves = get_legal_moves(board_stat, NgBlackPsWhith)
         
-        print(f"Partie {g+1}/{num_games} terminée")
+        if len(legal_moves) > 0:
+            best_move = find_best_move(move_prob, legal_moves)
+            if verbose:
+                print(f"Black: {best_move} from {len(legal_moves)} legal moves")
+            
+            board_stat[best_move[0], best_move[1]] = NgBlackPsWhith
+            board_stat = apply_flip(best_move, board_stat, NgBlackPsWhith)
+            
+            # Créer une matrice de probabilité avec seulement le coup joué à 1
+            move_matrix = np.zeros((8, 8))
+            move_matrix[best_move[0], best_move[1]] = 1
+            moves_prob_seq.append(move_matrix)
+            
+            pass_count = 0  # Réinitialiser le compteur de pass
+        else:
+            if verbose:
+                print("Black passes")
+            # Ajouter une matrice vide pour le pass
+            moves_prob_seq.append(np.zeros((8, 8)))
+            pass_count += 1
+        
+        # Vérifier si la partie est terminée
+        if pass_count >= 2 or len(board_stats_seq) >= 60:
+            break
+        
+        # Tour du joueur Blanc (model2)
+        NgBlackPsWhith = +1
+        board_stats_seq.append(copy.copy(board_stat))
+        
+        input_seq_boards = input_seq_generator(board_stats_seq, len_seq_model2)
+        model_input = np.array([input_seq_boards])
+        move_prob = model2(torch.tensor(model_input).float().to(device))
+        move_prob = move_prob.cpu().detach().numpy().reshape(8, 8)
+        
+        legal_moves = get_legal_moves(board_stat, NgBlackPsWhith)
+        
+        if len(legal_moves) > 0:
+            best_move = find_best_move(move_prob, legal_moves)
+            if verbose:
+                print(f"White: {best_move} from {len(legal_moves)} legal moves")
+            
+            board_stat[best_move[0], best_move[1]] = NgBlackPsWhith
+            board_stat = apply_flip(best_move, board_stat, NgBlackPsWhith)
+            
+            # Créer une matrice de probabilité avec seulement le coup joué à 1
+            move_matrix = np.zeros((8, 8))
+            move_matrix[best_move[0], best_move[1]] = 1
+            moves_prob_seq.append(move_matrix)
+            
+            pass_count = 0  # Réinitialiser le compteur de pass
+        else:
+            if verbose:
+                print("White passes")
+            # Ajouter une matrice vide pour le pass
+            moves_prob_seq.append(np.zeros((8, 8)))
+            pass_count += 1
+    
+    # Ajouter l'état final du plateau
+    board_stats_seq.append(copy.copy(board_stat))
+    
+    # Padding pour avoir exactement 60 états
+    while len(board_stats_seq) < 61:  # 61 car on a l'état initial + 60 coups max
+        board_stats_seq.append(copy.copy(board_stat))
+    
+    while len(moves_prob_seq) < 60:
+        moves_prob_seq.append(np.zeros((8, 8)))
+    
+    if verbose:
+        final_score = np.sum(board_stat)
+        if final_score < 0:
+            print(f"Black wins with {-int(final_score)} points")
+        elif final_score > 0:
+            print(f"White wins with {int(final_score)} points")
+        else:
+            print("Draw")
+    
+    return board_stats_seq[:61], moves_prob_seq[:60]
+
+
+def save_game_to_h5(board_stats_seq, moves_prob_seq, file_path, game_name):
+    """
+    Sauvegarde une partie dans un fichier .h5.
+    
+    Parameters:
+    - board_stats_seq (list): Séquence des états du plateau (61 états: initial + 60 coups).
+    - moves_prob_seq (list): Séquence des coups joués (60 coups).
+    - file_path (str): Chemin du fichier .h5 à créer.
+    - game_name (str): Nom de la partie (utilisé comme clé dans le fichier .h5).
+    """
+    # Convertir en numpy arrays
+    boards = np.array(board_stats_seq, dtype=np.float32)
+    moves = np.array(moves_prob_seq, dtype=np.float32)
+    
+    # Créer le dataset avec la même structure que les fichiers existants
+    game_data = np.array([boards, moves], dtype=object)
+    
+    # Sauvegarder dans un fichier .h5
+    with h5py.File(file_path, 'w') as h5f:
+        h5f.create_dataset(game_name, data=game_data, dtype=h5py.special_dtype(vlen=np.float32))
+    
+    print(f"Game saved to {file_path}")
+
+
+def generate_games(model1_path, model2_path, num_games, output_dir, start_id=1000000):
+    """
+    Génère plusieurs parties entre deux modèles et les sauvegarde en .h5.
+    
+    Parameters:
+    - model1_path (str): Chemin vers le premier modèle (joueur Noir).
+    - model2_path (str): Chemin vers le deuxième modèle (joueur Blanc).
+    - num_games (int): Nombre de parties à générer.
+    - output_dir (str): Dossier de sortie pour les fichiers .h5.
+    - start_id (int): ID de départ pour nommer les fichiers.
+    """
+    # Créer le dossier de sortie s'il n'existe pas
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Détecter le device
+    if torch.cuda.is_available():
+        device = torch.device("cuda:0")
+        print("Using CUDA")
+    else:
+        device = torch.device("cpu")
+        print("Using CPU")
+    
+    # Charger les modèles
+    print(f"Loading model 1: {model1_path}")
+    if torch.cuda.is_available():
+        model1 = torch.load(model1_path, weights_only=False)
+    else:
+        model1 = torch.load(model1_path, map_location=torch.device('cpu'), weights_only=False)
+    
+    print(f"Loading model 2: {model2_path}")
+    if torch.cuda.is_available():
+        model2 = torch.load(model2_path, weights_only=False)
+    else:
+        model2 = torch.load(model2_path, map_location=torch.device('cpu'), weights_only=False)
+    
+    # Générer les parties
+    stats = {"model1_wins": 0, "model2_wins": 0, "draws": 0}
+    
+    print(f"\nModel 1 len_inpout_seq: {getattr(model1, 'len_inpout_seq', 'NOT FOUND')}")
+    print(f"Model 2 len_inpout_seq: {getattr(model2, 'len_inpout_seq', 'NOT FOUND')}")
+    
+    for i in tqdm(range(num_games), desc="Generating games"):
+        # Alterner les joueurs pour équilibrer
+        if i % 2 == 0:
+            board_stats_seq, moves_prob_seq = play_game(model1, model2, device, verbose=(i==0))
+            is_model1_black = True
+        else:
+            board_stats_seq, moves_prob_seq = play_game(model2, model1, device, verbose=(i==1))
+            is_model1_black = False
+        
+        # Calculer le résultat
+        final_score = np.sum(board_stats_seq[-1])
+        if final_score < 0:  # Noir gagne
+            if is_model1_black:
+                stats["model1_wins"] += 1
+            else:
+                stats["model2_wins"] += 1
+        elif final_score > 0:  # Blanc gagne
+            if is_model1_black:
+                stats["model2_wins"] += 1
+            else:
+                stats["model1_wins"] += 1
+        else:
+            stats["draws"] += 1
+        
+        # Sauvegarder la partie
+        game_id = start_id + i
+        game_name = str(game_id)
+        file_path = os.path.join(output_dir, f"{game_name}.h5")
+        save_game_to_h5(board_stats_seq, moves_prob_seq, file_path, game_name)
+    
+    print("\n=== Statistics ===")
+    print(f"Model 1 wins: {stats['model1_wins']}")
+    print(f"Model 2 wins: {stats['model2_wins']}")
+    print(f"Draws: {stats['draws']}")
+    print(f"\nAll {num_games} games saved to {output_dir}")
+    
+    # Créer un fichier texte listant tous les fichiers générés
+    list_file = os.path.join(output_dir, "generated_games.txt")
+    with open(list_file, 'w') as f:
+        for i in range(num_games):
+            game_id = start_id + i
+            f.write(f"{game_id}.h5\n")
+    print(f"Game list saved to {list_file}")
+
 
 if __name__ == "__main__":
-    player1_model_path = "save_models_MLP_256_128/model_181.pt"
-    player2_model_path = "save_models_MLP_256_128/model_181.pt"
-    generate_battle_dataset(player1_model_path, player2_model_path, num_games=10000, output_dir="generated_dataset/")
+    if len(sys.argv) < 4:
+        print("Usage: python generate_h5_files_from_games.py <model1_path> <model2_path> <num_games> [output_dir] [start_id]")
+        print("\nExample:")
+        print("  python generate_h5_files_from_games.py save_models_MLP/best_model.pth save_models_CNN_32_Dropout_Gridsearch_Relu/best_model.pth 10")
+        print("  python generate_h5_files_from_games.py model1.pth model2.pth 100 generated_dataset/ 2000000")
+        sys.exit(1)
+    
+    model1_path = sys.argv[1]
+    model2_path = sys.argv[2]
+    num_games = int(sys.argv[3])
+    output_dir = sys.argv[4] if len(sys.argv) > 4 else "generated_dataset/"
+    start_id = int(sys.argv[5]) if len(sys.argv) > 5 else 1000000
+    
+    generate_games(model1_path, model2_path, num_games, output_dir, start_id)

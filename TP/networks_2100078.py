@@ -579,7 +579,7 @@ class MLP_512_256_Dropout_Relu_Post_Optimisation(nn.Module):
         outp = self.lin3(x)
 
         # Softmax
-        outp = F.softmax(outp, dim=1)
+        # outp = F.softmax(outp, dim=1)
         return outp
     
     def train_all(self, train, dev, num_epoch, device, optimizer):

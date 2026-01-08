@@ -1,0 +1,2 @@
+save_models_MLP_256_128_Dropout_Gridsearch_Relumodel_19.pt: 4 points
+save_models_LSTMmodel_19.pt: 6 points

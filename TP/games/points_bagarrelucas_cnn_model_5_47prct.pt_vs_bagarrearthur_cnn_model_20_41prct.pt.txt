@@ -1,0 +1,2 @@
+bagarrearthur_cnn_model_20_41prct.pt: 6 points
+bagarrelucas_cnn_model_5_47prct.pt: 3 points

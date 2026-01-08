@@ -500,9 +500,18 @@ Après avoir optimisé les modèles MLP et LSTM, j'ai constaté que le modèle L
 # Transformer TODO
 
 # Augmentation des données TODO
+Pour augmenter les données, j'ai modifié les classes de Dataset dans data.py pour faire des opérations simples sur les parties à leur chargement:
+- Rotations (90, 180, 270 degrés)
+- Symétrie
+Le dataset a été multiplié par 8 grâce à ces transformations.
+
 Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.
 
-Je vais aussi prendre les données actuelles et faire des transformations simples pour augmenter le dataset, comme des rotations et des réflexions du plateau de jeu.
+# League Othello
+J'ai utilisé un modèle CNN (un des plus performants) pour le convertir au format "jif" et ainsi pouvoir l'utiliser sur le site [League Othello](https://huggingface.co/spaces/MeysamSh/Othello-League). J'ai réussi à l'uploader et à jouer contre mon modèle, par contre je n'ai pas réussi à lancer une league (ça m'affiche une erreur quand je clique sur "Run League").
+
+# Game.py
+En faisant jouer plusieurs modèles les uns contre les autrs, j'ai remarqué que les parties effectuées étaient toujours strictement les mêmes pour deux modèles données. J'ai donc modifié un peu la fonction `find_best_move` pour ajouter un peu d'aléatoire dans le choix des coups à jouer, comme dans une partie réelle.
 
 # Utilisation GPU/CPU
-Lors de l'entrainement, mon GPU est faiblement utilisé (7%). Le CPU lui a des piques à 100% mais en moyenne il est à 15%. Je pense qu'il y a un problème de lenteur au chargement des données. Quand j'augmente le batch size, le temps d'entrainement diminue mais la précision du modèle est impactée négativement. Je pense que le goulot d'étranglement vient du CPU qui n'arrive pas à fournir les données assez rapidement au GPU.
+Lors de l'entrainement, mon GPU est faiblement utilisé (7%). Le CPU lui a des piques à 100% mais en moyenne il est à 15%. Je pense qu'il y a un problème de lenteur au chargement des données. Quand j'augmente le batch size, le temps d'entrainement diminue mais la précision du modèle est impactée négativement. Je pense que le goulot d'étranglement vient du CPU qui n'arrive pas à fournir les données assez rapidement au GPU. En passant de LSTM/MLP à CNN, l'utilisation du GPU a augmenté à 50%, donc les modèles LSTM et MLP sont probablement trop simples pour exploiter pleinement la puissance du GPU.
