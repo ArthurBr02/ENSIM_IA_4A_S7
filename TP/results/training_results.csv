@@ -272,3 +272,4 @@ timestamp,model_name,optimizer,learning_rate,best_epoch,epochs_completed,best_de
 2026-01-08 21:06:46,LSTMHiddenState_Dropout_Relu_256_Post_Optimisation,Adam,0.005,7,13,0.3671333333333333,2.023757365409364,476.3
 2026-01-08 21:21:21,LSTMHiddenState_Dropout_Relu_256_Post_Optimisation,Adam,0.005,11,17,0.3618,2.0930771822625016,680.83
 2026-01-08 21:23:38,MLP_512_256_Dropout_Relu_Post_Optimisation,Adam,0.001,19,20,0.3312,2.1533348073350624,807.08
+2026-01-08 21:42:24,MLP_512_256_Dropout_Relu_Post_Optimisation,Adam,0.001,20,20,0.18966666666666668,3.995420732903988,767.93
