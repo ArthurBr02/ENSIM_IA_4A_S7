@@ -26,7 +26,7 @@ dataset_conf["filelist"]="train.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=512
+dataset_conf['batch_size']=1000
 
 print("Training Dataste ... ")
 ds_train = CustomDatasetManyAugmented(dataset_conf, load_data_once4all=True)
@@ -39,7 +39,7 @@ dataset_conf["filelist"]="dev.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=512
+dataset_conf['batch_size']=1000
 
 print("Development Dataste ... ")
 ds_dev = CustomDatasetManyAugmented(dataset_conf, load_data_once4all=True)
@@ -68,7 +68,7 @@ for dropout in dropouts:
 
     for optimizer in optimizers:
         for lr in learning_rates:
-            model = LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs(conf).to(device)
+            model = LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data(conf).to(device)
             print(model)
 
             n = count_parameters(model)

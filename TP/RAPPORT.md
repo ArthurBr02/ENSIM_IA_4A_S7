@@ -473,6 +473,8 @@ Pour l'implémentation du CNN, j'ai créé plusieurs modèles avec différentes 
 
 Vous trouverez les résultats du grid search dans le tableau accessible [ici](https://docs.google.com/spreadsheets/d/1Q9143W9SJG1hCkDcZi2S996DMVV-jowTXU0HDCYXJvA/edit?usp=sharing).
 
+D'après ma compréhension du kernel size et du padding pour un CNN, j'ai décidé de garderle kernel size en 3x3, car il permet de bien capturer les spécificités du jeu et j'ai aussi choisi de mettre 1 de padding pour conserver une matrice 8x8 en sortie de chaque couche.
+
 D'après les résultats obtenus, je vais conserver deux modèles de CNN pour faire de l'optimisation dessus:
 
 CNN_64_128_256_Dropout_Gridsearch_Relu (43.87% accuracy sur dev set en 5 epochs)
@@ -497,11 +499,7 @@ Paramètres:
 
 Pour ces deux modèles, on peut remarquer qu'on a énormément d'overfitting car la courbe de loss de dev croit alors que celle de train diminue (Modèle 1: 22.76%, Modèle 2: 24.68%). Il y a aussi une énorme différence entre l'accuracy sur le train set et le dev set (Modèle 1: 31.72%, Modèle 2: 37.75%). Le score est très bon sur le dev set mais la complexité des modèles fait qu'ils ont du mal à généraliser sur si peu de données. Je vais retenter l'expérience avec l'augmentation des données. Voir section [CNN optimisé avec données augmentées](#cnn-optimisé-avec-données-augmentées).
 
-# CNN-LSTM TODO
-
-# Transformer TODO
-
-# Augmentation des données TODO
+# Augmentation des données
 
 ## Transformations
 Pour augmenter les données, j'ai modifié les classes de Dataset dans data.py pour faire des opérations simples sur les parties à leur chargement:
@@ -615,6 +613,7 @@ Accuracy Train:40.98%, Dev:0.33% ; Time:219 (last_train:155, last_pred:63)
 J'ai utilisé un modèle MLP optimisé pour tester ce dataset. Cependant, j'ai remarqué que l'entrainement donne des résultats vraiment très décevants, 46% d'accuracy sur train et 0.33% sur dev set dès la première epoch. J'ai tendance à me dire que le dataset généré est uniquement composé de données générées via IA donc peu représentatives des vraies parties jouées par des humains. Je vais donc ré-entraîner le modèle MLP optimisé avec les données originales + données augmentées par transformation + données générées par IA.
 
 #### Entrainement avec données originales + données augmentées par transformation + données générées par IA
+
 ```logs
 Number of samples (with augmentation): 2976480
 Development Dataste ... 
@@ -634,14 +633,118 @@ Accuracy Train:29.25%, Dev:29.89% ; Time:122 (last_train:72, last_pred:50)
 
 En utilisant les données originales en plus des données générées, le tout augmenté par transformation, on peut voir que le score de précision sur dev est beaucoup mieux. On voit aussi qu'on a maintenant quasiment 3000000 samples dans le jeu d'entrainement.
 
-Je vais maintenant essayer d'entraîner le modèle CNN optimisé avec ces nouvelles données sur 20 epochs pour voir la différence.
+### Réentrainement des modèles optimisés avec les nouvelles données
+
+Pour les entrainements suivants, j'utiliserai les modèles optimisés (MLP, LSTM, CNN), sur 20 epochs, early stopping de 5 et avec des batch size de 1000. 
+
+#### MLP
+Ce modèle a 181056 poids entraînables.
+
+```logs
+Recalculing the best DEV: WAcc : 43.40541666666667%
+Fin entrainement MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data sur 20 epoch en (3119.7436101436615, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage MLP optimisé avec données augmentées + données générées par IA](results/plots\learning_curve_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data_20260110_023626.png)
+
+Les résultats du MLP optimisé sont bons, cependant on remarque que la courbe d'accuracy dev est largement au dessus de la courbe d'accuracy train, ce qui peu indiquer que le modèle n'a pas assez de complexité pour capturer toute la complexité du jeu. On a un temps d'entraînement très élevé (3119sc contre 4120sc avant l'ajout des données générées par IA) mais le gain en performance est conséquent.
+
+#### LSTM
+Ce modèle a 362560 poids entraînables.
+
+```logs
+Recalculing the best DEV: WAcc : 49.425000000000004%
+Fin entrainement LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data sur 20 epoch en (2960.11762547493, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage LSTM optimisé avec données augmentées + données générées par IA](results/plots\learning_curve_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data_20260110_023738.png)
+
+Le modèle LSTM optimisé atteint 49.42% d'accuracy sur le dev set, ce qui est un très bon score. On peut remarquer qu'il y a un plateau sur l'accuracy du dev set, qui pourrait encore une fois, indiquer que le modèle est trop "simple" pour ce dataset augmenté. Grâce aux courbes de loss, on peut voir que l'overfitting a disparu.
+
+#### CNN
+Ce modèle a 617024 poids entraînables.
+
+```logs
+Recalculing the best DEV: WAcc : 52.07020833333333%
+Fin entrainement CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data sur 20 epoch en (3294.52676320076, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage CNN optimisé avec données augmentées + données générées par IA](results/plots\learning_curve_CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data_20260110_022235.png)
+
+Les résultats sont excellents, il n'y a pas d'overfitting et on atteint une accuracy de 52.07% sur le dev set. Le temps d'entraînement est très élevé (3294sc contre 2199sc avant l'ajout des données générées par IA) mais le gain en performance est là. On a une courbe d'accuracy du dev set qui est au dessus de la courbe d'accuracy du train set, ce qui est un très bon signe de généralisation. Cependant, l'entrainement a atteint un plateau à 52%, tout en étant pas overfit, ce qui peut indiquer que le modèle a atteint sa limite de performance avec sa complexité actuelle.
+
+#### Conclusion et pistes d'amélioration TODO
+
+Augmenter le dataset a permis d'améliorer énormément les performances des modèles. Cependant, il reste encore des pistes d'amélioration:
+- Augmenter la complexité des modèles (plus de couches, plus de neurones)
+- Tester d'autres architectures de modèles (CNN + LSTM, Transformer)
+
+Augmenter la complexité des modèles va augmenter le temps d'entraînement, mais cela pourrait permettre d'atteindre de meilleures performances.
+
+Pour la suite je vais me concentrer uniquement sur le modèle CNN qui est plus adapté pour ce type de données (images/plateaux) et qui offre de meilleures performances que les autres modèles.
+
+### Augmentation de la complexité des modèles
+#### CNN TODO
+L'entraînement sera fait sur 200 epochs avec early stopping de 10 epochs et un batch size de 1000 pour voir si augmenter la complexité permet de réduire le plateau de performance.
+
+Pour le CNN, je vais passer créer un nouveau CNN avec comme configuration:
+- Couches convolutives: [32, 64, 128, 256]
+- Dropout: 0.2
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+- Batch size: 1000
+
+Le modèle passe à 1436480 poids entraînables pour un dataset de 2.9 millions de samples.
+
+```logs
+Recalculing the best DEV: WAcc : 55.23875%
+Fin entrainement CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data sur 50 epoch en (10932.816554307938, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2
+```
+![Courbes d'apprentissage CNN plus complexe](results/plots\learning_curve_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_20260110_055301.png)
+
+Sur ce modèle, on peut remarquer qu'on a toujours un plateau sur l'accuracy de dev qui début à la 10ème epoch. On a un gain de performances concret par rapport au modèle précédent, mais le temps d'entrainement a énormément augmenté (10932sc contre 3294sc avant). On peut aussi remarquer que l'overfitting est toujours absent, ce qui est un très bon point. L'entraînement sur 200 epochs était pour voir jusqu'où le modèle irait, mais il s'est arrêté à la 50ème epoch à cause de l'early stopping, donc les prochains essais se feront sur maximum 50 epochs.
+
+
+Je vais aussi tester un modèle plus complexe configuré comme suit pour voir si augmenter encore la complexité améliore les performances ou les dégrades:
+- Couches convolutives: [64, 128, 256, 512, 1024]
+- Dropout: 0.2
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+- Batch size: 1000
+
+Le modèle passe à 10463808 poids entraînables pour un dataset de 2.9 millions de samples.
+
+```logs
+Recalculing the best DEV: WAcc : 56.335416666666674%
+Fin entrainement CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data sur 28 epoch en (11247.05422949791, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage CNN très complexe](results/plots\learning_curve_CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_20260110_061711.png)
+
+Sur celui-ci, la complexité est peut-être trop élevée car on remarque un gros overfitting qui commence à la 3ème epoch. À partir de la 7ème epoch, la loss sur dev set augmente alors que celle sur train diminue fortement. Le temps d'entraînement a encore augmenté (11247sc contre 10932sc avant) mais le gain en performance est minime (56.33% contre 55.23% avant). Je pense que la complexité de ce modèle est trop élevée pour le dataset utilisé, ce qui entraîne de l'overfitting et limite les performances. De plus, l'entraînement s'est arrêté à la 28ème epoch à cause de l'early stopping, donc je ne vais pas retenir ce modèle pour la suite.
+
+#### Batch normalization
+Pour améliorer encore mon modèle de CNN, j'ai vu qu'il existe une technique appelée batch normalization qui permet de retarder la convergeance du modèle et qui permet de se passer de dropout. Pour ça j'utilise la classe `nn.BatchNorm2d` de PyTorch que j'insère après chaque couche convolutive. Cela va rendre les données en sortie d'une couche convolutive comprises entre 0 et 1, ce qui évite d'avoir des données trop grandes ou trop petites qui pourraient ralentir l'apprentissage.
+
+Je vais faire le test avec le modèle suivant:
+- Couches convolutives: [32, 64, 128, 256]
+- Batch normalization après chaque couche convolutive
+- Pas de dropout
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+- Batch size: 1000
+
+On se retrouve avec 389057 poids entraînables pour un dataset de 2.9 millions de samples.
 
 ```logs
 ```
 
-## CNN optimisé vs LSTM optimisé TODO TODO TODO
-```logs
-```
+# CNN-LSTM TODO
+
+# Transformer TODO
 
 # Entrainement final TODO TODO TODO
 Pour l'entrainement final, j'ai entrainé le modèle TODO optimisé avec données augmentées sur 100 epochs pour voir si je peux encore améliorer les performances. J'ai regroupé les données de test/dev dans le train set augmenté pour avoir plus de données d'entrainement.

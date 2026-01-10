@@ -40,7 +40,7 @@ dataset_conf["filelist"]="dev.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
 dataset_conf["path_dataset"]="./dataset/"
-dataset_conf['batch_size']=10000
+dataset_conf['batch_size']=1000
 
 print("Development Dataste ... ")
 ds_dev = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
@@ -50,8 +50,8 @@ devSet = DataLoader(ds_dev,
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=50
-conf["earlyStopping"]=10
+conf['epoch']=20
+conf["earlyStopping"]=5
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=128
@@ -67,7 +67,7 @@ for dropout in dropouts:
     for optimizer in optimizers:
         for lr in learning_rates:
             
-            model = MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data(conf).to(device)
+            model = MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data(conf).to(device)
             print(model)
 
             n = count_parameters(model)

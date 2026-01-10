@@ -30,7 +30,7 @@ dataset_conf["path_dataset"]="./generated_dataset/h5/"
 dataset_conf['batch_size']=1000
 
 print("Training Dataste ... ")
-ds_train = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
+ds_train = CustomDatasetManyAugmented(dataset_conf,load_data_once4all=True)
 trainSet = DataLoader(ds_train, 
                       batch_size=dataset_conf['batch_size'])
 
@@ -43,15 +43,15 @@ dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=1000
 
 print("Development Dataste ... ")
-ds_dev = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
+ds_dev = CustomDatasetManyAugmented(dataset_conf,load_data_once4all=True)
 devSet = DataLoader(ds_dev, 
                     batch_size=dataset_conf['batch_size'])
 
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=20
-conf["earlyStopping"]=5
+conf['epoch']=50
+conf["earlyStopping"]=10
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=128
@@ -67,7 +67,7 @@ for dropout in dropouts:
     for optimizer in optimizers:
         for lr in learning_rates:
             
-            model = CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data(conf).to(device)
+            model = CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm(conf).to(device)
             print(model)
 
             n = count_parameters(model)
@@ -89,8 +89,8 @@ for dropout in dropouts:
                                 conf['epoch'],
                                 device, opt)
                                 
-            print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"), "| Paramètres: Learning rate=", lr, "- Optimizer=", optimizer, "- Dropout=", dropout)
-
+            print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"), "| Paramètres: Learning rate=", lr, "- Optimizer=", optimizer, "- Dropout=", dropout, "- Batch Size=", dataset_conf['batch_size'])
+            print("best_epoch:", best_epoch)
 # model = torch.load(conf["path_save"] + '/model_2.pt')
 # model.eval()
 # train_clas_rep=model.evalulate(trainSet, device)
