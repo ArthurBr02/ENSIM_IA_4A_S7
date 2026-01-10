@@ -103,6 +103,10 @@ def isBlackWinner(move_array,board_stat,player=-1):
              (0, -1),           (0, +1),
              (+1, -1), (+1, 0), (+1, +1)]
     move=np.where(move_array == 1)
+
+    # if len(move[0]) == 0 or len(move[1]) == 0:
+    #     return np.sum(board_stat) < 0
+
     move=[move[0][0],move[1][0]]
     board_stat[move[0],move[1]]=player
 

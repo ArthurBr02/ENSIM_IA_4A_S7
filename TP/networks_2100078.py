@@ -587,6 +587,192 @@ class MLP_512_256_Dropout_Relu_Post_Optimisation(nn.Module):
     
     def evalulate(self,test_loader, device):
         return evaluate(self, test_loader, device)
+    
+"""
+[512, 256],              # 2 couches
+"""
+class MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+        Architecture: Input(64) -> 512 -> 256 -> Output(64) with Dropout and ReLU
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        
+        super(MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs, self).__init__()
+        
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs"
+
+        # Define the layers of the MLP: Input -> 512 -> 256 -> Output
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 512)
+        self.lin2 = nn.Linear(512, 256)
+        self.lin3 = nn.Linear(256, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        x = self.lin2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        outp = self.lin3(x)
+
+        # Softmax
+        # outp = F.softmax(outp, dim=1)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[512, 256],              # 2 couches
+"""
+class MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+        Architecture: Input(64) -> 512 -> 256 -> Output(64) with Dropout and ReLU
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        
+        super(MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data, self).__init__()
+        
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data"
+
+        # Define the layers of the MLP: Input -> 512 -> 256 -> Output
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 512)
+        self.lin2 = nn.Linear(512, 256)
+        self.lin3 = nn.Linear(256, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        x = self.lin2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        outp = self.lin3(x)
+
+        # Softmax
+        # outp = F.softmax(outp, dim=1)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[512, 256],              # 2 couches
+"""
+class MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_200epochs(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+        Architecture: Input(64) -> 512 -> 256 -> Output(64) with Dropout and ReLU
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        
+        super(MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_200epochs, self).__init__()
+        
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_200epochs/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_200epochs"
+
+        # Define the layers of the MLP: Input -> 512 -> 256 -> Output
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 512)
+        self.lin2 = nn.Linear(512, 256)
+        self.lin3 = nn.Linear(256, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        x = self.lin2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        outp = self.lin3(x)
+
+        # Softmax
+        # outp = F.softmax(outp, dim=1)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
 
 """
 [256],              # 1 couche
@@ -3481,6 +3667,110 @@ class CNN_32_64_128_Dropout_Gridsearch_Relu(nn.Module):
         return evaluate(self, test_loader, device)
 
 """
+[32, 64, 128],     # 3 couches
+"""
+class CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128."""
+        super(CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs"
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.fc = nn.Linear(128 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
+[32, 64, 128],     # 3 couches
+"""
+class CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128."""
+        super(CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data"
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.fc = nn.Linear(128 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
 [64, 128, 256],    # 3 couches
 """
 class CNN_64_128_256_Dropout_Gridsearch_Relu(nn.Module):
@@ -3495,6 +3785,58 @@ class CNN_64_128_256_Dropout_Gridsearch_Relu(nn.Module):
         self.conf_dropout = conf['dropout']
         
         self.name = "CNN_64_128_256_Dropout_Gridsearch_Relu"
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.fc = nn.Linear(256 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[64, 128, 256],    # 3 couches
+"""
+class CNN_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 64, 128, 256."""
+        super(CNN_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs"
         
         self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
@@ -3830,6 +4172,7 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
     dev_loss_list=[]
     torch.autograd.set_detect_anomaly(True)
     init_time=time.time()
+    best_model_name=""
     for epoch in range(1, num_epoch+1):
         start_time=time.time()
         loss = 0.0
@@ -3881,7 +4224,8 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
 
         if acc_dev > best_dev or best_dev == 0.0:
             notchange=0
-            torch.save(self, self.path_save + '/model_' + str(epoch) + '_' + str(time.time()) + '.pt')
+            best_model_name = self.path_save + '/model_' + str(epoch) + '_' + str(time.time()) + '_' + str(acc_dev) + 'prct.pt'
+            torch.save(self, best_model_name)
             best_dev = acc_dev
             best_dev_loss = avg_dev_loss
             best_epoch = epoch
@@ -3894,7 +4238,7 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
         
         print("*"*15,f"The best score on DEV {best_epoch} :{round(100*best_dev,3)}%")
 
-    self = torch.load(self.path_save + '/model_' + str(best_epoch) + '_' + str(time.time()) + '.pt', weights_only=False)
+    self = torch.load(best_model_name, weights_only=False)
     self.eval()
     _clas_rep = self.evalulate(dev, device)
     final_dev_acc = _clas_rep['weighted avg']['recall']

@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import argparse
 from glob import glob
 
-def plot_learning_curve(csv_filepath, save_fig=True):
+def plot_learning_curve(csv_filepath, save_fig=True, display=False):
     """
     Trace les courbes d'apprentissage à partir d'un fichier CSV.
     
@@ -72,7 +72,8 @@ def plot_learning_curve(csv_filepath, save_fig=True):
         plt.savefig(plot_filepath, dpi=300, bbox_inches='tight')
         print(f"✓ Graphique sauvegardé: {plot_filepath}")
     
-    plt.show()
+    if display:
+        plt.show()
 
 
 def compare_models(csv_filepaths, metric='dev_accuracy'):
@@ -125,10 +126,13 @@ def main():
     parser.add_argument('--metric', type=str, default='dev_accuracy', 
                        choices=['dev_accuracy', 'dev_loss', 'train_accuracy', 'train_loss'],
                        help='Métrique à comparer')
+    parser.add_argument('--display', action='store_true', help='Afficher les graphiques dans une fenêtre')
     
     args = parser.parse_args()
     
     results_dir = 'results'
+
+    display = args.display
     
     # Vérifier que le dossier results existe
     if not os.path.exists(results_dir):
@@ -174,7 +178,7 @@ def main():
         # Par défaut: tracer la dernière courbe
         latest_file = all_files[-1]
         print(f"Tracé de la dernière courbe: {os.path.basename(latest_file)}")
-        plot_learning_curve(latest_file)
+        plot_learning_curve(csv_filepath=latest_file, save_fig=True, display=display)
 
 
 if __name__ == '__main__':

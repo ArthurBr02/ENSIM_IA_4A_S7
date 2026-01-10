@@ -78,22 +78,22 @@ At the end of TP course, you should present your work in 5 minutes as well
 [X] Checking the impact of different epochs and batch size
 5
 
-[] Using all data and not only winner samples (voir fichier data.py, on utilise que 30 tours sur 60 | for sm_idx in range(30):)
+[x] Using all data and not only winner samples (voir fichier data.py, on utilise que 30 tours sur 60 | for sm_idx in range(30):)
 5
 
-[] Calculating the learning curve (training/dev performance on epochs)
+[x] Calculating the learning curve (training/dev performance on epochs)
 5
 
-[] Analysing learning curves
+[x] Analysing learning curves
 10
 
 [] Not choosing a valid evaluation metric (the reported accuracy, loss should be on dev/test)
 -10
 
-[] Experiment design with logical conclusion (how they find the best model?)
+[x] Experiment design with logical conclusion (how they find the best model?)
 5
 
-[] Analysing results to diagnose the problem or improve results
+[x] Analysing results to diagnose the problem or improve results
 10
 
 [] Analysing different evaluation metrics such as “game win ratio” or “legal move ratio”

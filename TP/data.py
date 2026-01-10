@@ -98,62 +98,57 @@ class CustomDatasetMany(Dataset):
         self.game_files_name=list_files#[s + ".h5" for s in list_files]       
         
         if self.load_data_once4all:
-            # Utiliser float32 au lieu de int pour PyTorch
-            self.samples=np.zeros((len(self.game_files_name)*30,self.len_samples,8,8), dtype=np.float32)
-            self.outputs=np.zeros((len(self.game_files_name)*30,8*8), dtype=np.float32)
-            idx=0
+            # Build lists dynamically to support variable-length games and use all moves
+            samples_list = []
+            outputs_list = []
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                        
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
                     if end_move+1 >= self.len_samples:
-                        features=game_log[0][end_move-self.len_samples+1:
-                                             end_move+1]
+                        features = game_log[0][end_move-self.len_samples+1:end_move+1]
                     else:
-                        features=[self.starting_board_stat]
-                        #Padding starting board state before first index of sequence
+                        features = [self.starting_board_stat]
+                        # Padding starting board state before first index of sequence
                         for i in range(self.len_samples-end_move-2):
                             features.append(self.starting_board_stat)
-                        #adding the inital of game as the end of sequence sample
+                        # adding the initial of game as the end of sequence sample
                         for i in range(end_move+1):
                             features.append(game_log[0][i])
 
-                    #if black is the current player the board should be multiplay by -1    
-                    if is_black_winner:       
-                        features=np.array([features],dtype=np.float32)*-1
-                    else:
-                        features=np.array([features],dtype=np.float32)    
-                        
-                    self.samples[idx]=features
-                    self.outputs[idx]=np.array(game_log[1][end_move]).flatten()
-                    idx+=1
+                    # if black is the current player the board should be multiplied by -1
+                    # Determine which player plays at end_move: True if black
+                    is_black_player = (end_move % 2 == 0)
+                    features = np.array([features], dtype=np.float32)
+                    if is_black_player:
+                        features = features * -1
+
+                    samples_list.append(features[0])
+                    outputs_list.append(np.array(game_log[1][end_move]).flatten())
+
+            # convert lists to arrays
+            if len(samples_list) > 0:
+                self.samples = np.array(samples_list, dtype=np.float32)
+                self.outputs = np.array(outputs_list, dtype=np.float32)
+            else:
+                self.samples = np.zeros((0, self.len_samples, 8, 8), dtype=np.float32)
+                self.outputs = np.zeros((0, 8*8), dtype=np.float32)
         else:
-        
-            #creat a list of samples as SampleManager objcets
-            self.samples=np.empty(len(self.game_files_name)*30, dtype=object)
-            idx=0
+            # create a list of samples as SampleManager objects for lazy loading
+            samples_list = []
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                    self.samples[idx]=SampleManager(gm_name,
-                                                    self.path_dataset,
-                                                    end_move,
-                                                    self.len_samples,
-                                                    is_black_winner)
-                    idx+=1
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
+                    # determine which player plays at end_move: True if black
+                    is_black_player = (end_move % 2 == 0)
+                    samples_list.append(SampleManager(gm_name,
+                                                      self.path_dataset,
+                                                      end_move,
+                                                      self.len_samples,
+                                                      is_black_player))
+
+            self.samples = samples_list
         
         #np.random.shuffle(self.samples)
         print(f"Number of samples : {len(self.samples)}")
@@ -221,60 +216,49 @@ class CustomDatasetOne(Dataset):
         self.game_files_name=list_files#[s + ".h5" for s in list_files]       
         
         if self.load_data_once4all:
-            self.samples=np.zeros((len(self.game_files_name)*30,self.len_samples,8,8), dtype=int)
-            self.outputs=np.zeros((len(self.game_files_name)*30,8*8), dtype=int)
-            idx=0
+            samples_list = []
+            outputs_list = []
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                        
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
                     if end_move+1 >= self.len_samples:
-                        features=game_log[0][end_move-self.len_samples+1:
-                                             end_move+1]
+                        features = game_log[0][end_move-self.len_samples+1:end_move+1]
                     else:
-                        features=[self.starting_board_stat]
-                        #Padding starting board state before first index of sequence
+                        features = [self.starting_board_stat]
                         for i in range(self.len_samples-end_move-2):
                             features.append(self.starting_board_stat)
-                        #adding the inital of game as the end of sequence sample
                         for i in range(end_move+1):
                             features.append(game_log[0][i])
 
-                    #if black is the current player the board should be multiplay by -1    
-                    if is_black_winner:       
-                        features=np.array([features],dtype=int)*-1
-                    else:
-                        features=np.array([features],dtype=int)    
-                        
-                    self.samples[idx]=features
-                    self.outputs[idx]=np.array(game_log[1][end_move]).flatten()
-                    idx+=1
+                    is_black_player = (end_move % 2 == 0)
+                    features = np.array([features], dtype=int)
+                    if is_black_player:
+                        features = features * -1
+
+                    samples_list.append(features[0])
+                    outputs_list.append(np.array(game_log[1][end_move]).flatten())
+
+            if len(samples_list) > 0:
+                self.samples = np.array(samples_list, dtype=int)
+                self.outputs = np.array(outputs_list, dtype=int)
+            else:
+                self.samples = np.zeros((0, self.len_samples, 8, 8), dtype=int)
+                self.outputs = np.zeros((0, 8*8), dtype=int)
         else:
-        
-            #creat a list of samples as SampleManager objcets
-            self.samples=np.empty(len(self.game_files_name)*30, dtype=object)
-            idx=0
+            samples_list = []
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                    self.samples[idx]=SampleManager(gm_name,
-                                                    self.path_dataset,
-                                                    end_move,
-                                                    self.len_samples,
-                                                    is_black_winner)
-                    idx+=1
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
+                    is_black_player = (end_move % 2 == 0)
+                    samples_list.append(SampleManager(gm_name,
+                                                      self.path_dataset,
+                                                      end_move,
+                                                      self.len_samples,
+                                                      is_black_player))
+
+            self.samples = samples_list
         
         print(f"Number of samples : {len(self.samples)}")
         
@@ -344,97 +328,67 @@ class CustomDatasetManyAugmented(Dataset):
         self.game_files_name=list_files#[s + ".h5" for s in list_files]       
         
         if self.load_data_once4all:
-            # Avec augmentation: 1 original + 3 rotations = 4, chacune avec flip = 4*2 = 8 versions
-            num_augmentations = 8
-            total_samples = len(self.game_files_name) * 30 * num_augmentations
-            
-            # Utiliser float32 au lieu de int pour PyTorch
-            self.samples=np.zeros((total_samples, self.len_samples, 8, 8), dtype=np.float32)
-            self.outputs=np.zeros((total_samples, 8*8), dtype=np.float32)
-            idx=0
-            
+            # Build augmented samples dynamically for all moves
+            samples_list = []
+            outputs_list = []
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                        
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
                     if end_move+1 >= self.len_samples:
-                        features=game_log[0][end_move-self.len_samples+1:
-                                             end_move+1]
+                        features = game_log[0][end_move-self.len_samples+1:end_move+1]
                     else:
-                        features=[self.starting_board_stat]
-                        #Padding starting board state before first index of sequence
+                        features = [self.starting_board_stat]
                         for i in range(self.len_samples-end_move-2):
                             features.append(self.starting_board_stat)
-                        #adding the inital of game as the end of sequence sample
                         for i in range(end_move+1):
                             features.append(game_log[0][i])
 
-                    #if black is the current player the board should be multiplay by -1    
-                    if is_black_winner:       
-                        features=np.array([features],dtype=np.float32)*-1
-                    else:
-                        features=np.array([features],dtype=np.float32)    
-                    
+                    is_black_player = (end_move % 2 == 0)
+                    features = np.array([features], dtype=np.float32)
+                    if is_black_player:
+                        features = features * -1
+
                     original_output = np.array(game_log[1][end_move]).flatten()
-                    
-                    # Appliquer les rotations: 0° (original), 90°, 180°, 270°
-                    # Note: k=1 -> 90°, k=2 -> 180°, k=3 -> 270°
-                    for k in range(4):  # 0, 1, 2, 3 rotations de 90°
-                        # Rotation des features (toutes les boards de la séquence)
+
+                    for k in range(4):
                         rotated_features = np.array([rotate_board(board, k) for board in features[0]])
                         rotated_output = rotate_move(original_output, k)
-                        
-                        # Version avec rotation seulement
-                        self.samples[idx] = rotated_features
-                        self.outputs[idx] = rotated_output
-                        idx += 1
-                        
-                        # Version avec rotation + symétrie (flip)
+                        samples_list.append(rotated_features)
+                        outputs_list.append(rotated_output)
+
                         flipped_features = np.array([flip_board(board) for board in rotated_features])
                         flipped_output = flip_move(rotated_output)
-                        
-                        self.samples[idx] = flipped_features
-                        self.outputs[idx] = flipped_output
-                        idx += 1
+                        samples_list.append(flipped_features)
+                        outputs_list.append(flipped_output)
+
+            if len(samples_list) > 0:
+                self.samples = np.array(samples_list, dtype=np.float32)
+                self.outputs = np.array(outputs_list, dtype=np.float32)
+            else:
+                self.samples = np.zeros((0, self.len_samples, 8, 8), dtype=np.float32)
+                self.outputs = np.zeros((0, 8*8), dtype=np.float32)
         else:
-            # Pour le mode lazy loading, on garde les indices et on applique l'augmentation à la volée
-            base_samples = len(self.game_files_name) * 30
+            # Lazy mode: store SampleManager objects and augmentation params
+            samples_list = []
             num_augmentations = 8
-            self.samples=np.empty(base_samples * num_augmentations, dtype=object)
-            idx=0
-            
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                    
-                    # Créer 8 versions augmentées
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
                     for aug_idx in range(num_augmentations):
-                        rotation_k = aug_idx // 2  # 0,0,1,1,2,2,3,3
-                        apply_flip = aug_idx % 2 == 1  # False,True,False,True,...
-                        
-                        self.samples[idx]=SampleManager(gm_name,
-                                                        self.path_dataset,
-                                                        end_move,
-                                                        self.len_samples,
-                                                        is_black_winner)
-                        # Stocker les paramètres d'augmentation
-                        self.samples[idx].rotation_k = rotation_k
-                        self.samples[idx].apply_flip = apply_flip
-                        idx+=1
+                        rotation_k = aug_idx // 2
+                        apply_flip = aug_idx % 2 == 1
+                        sm = SampleManager(gm_name,
+                                           self.path_dataset,
+                                           end_move,
+                                           self.len_samples,
+                                           (end_move % 2 == 0))
+                        sm.rotation_k = rotation_k
+                        sm.apply_flip = apply_flip
+                        samples_list.append(sm)
+
+            self.samples = samples_list
         
         print(f"Number of samples (with augmentation): {len(self.samples)}")
         
@@ -517,96 +471,64 @@ class CustomDatasetOneAugmented(Dataset):
         self.game_files_name=list_files#[s + ".h5" for s in list_files]       
         
         if self.load_data_once4all:
-            # Avec augmentation: 1 original + 3 rotations = 4, chacune avec flip = 4*2 = 8 versions
-            num_augmentations = 8
-            total_samples = len(self.game_files_name) * 30 * num_augmentations
-            
-            self.samples=np.zeros((total_samples, self.len_samples, 8, 8), dtype=int)
-            self.outputs=np.zeros((total_samples, 8*8), dtype=int)
-            idx=0
-            
+            samples_list = []
+            outputs_list = []
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                        
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
                     if end_move+1 >= self.len_samples:
-                        features=game_log[0][end_move-self.len_samples+1:
-                                             end_move+1]
+                        features = game_log[0][end_move-self.len_samples+1:end_move+1]
                     else:
-                        features=[self.starting_board_stat]
-                        #Padding starting board state before first index of sequence
+                        features = [self.starting_board_stat]
                         for i in range(self.len_samples-end_move-2):
                             features.append(self.starting_board_stat)
-                        #adding the inital of game as the end of sequence sample
                         for i in range(end_move+1):
                             features.append(game_log[0][i])
 
-                    #if black is the current player the board should be multiplay by -1    
-                    if is_black_winner:       
-                        features=np.array([features],dtype=int)*-1
-                    else:
-                        features=np.array([features],dtype=int)    
-                    
+                    is_black_player = (end_move % 2 == 0)
+                    features = np.array([features], dtype=int)
+                    if is_black_player:
+                        features = features * -1
+
                     original_output = np.array(game_log[1][end_move]).flatten()
-                    
-                    # Appliquer les rotations: 0° (original), 90°, 180°, 270°
-                    # Note: k=1 -> 90°, k=2 -> 180°, k=3 -> 270°
-                    for k in range(4):  # 0, 1, 2, 3 rotations de 90°
-                        # Rotation des features (toutes les boards de la séquence)
+                    for k in range(4):
                         rotated_features = np.array([rotate_board(board, k) for board in features[0]])
                         rotated_output = rotate_move(original_output, k)
-                        
-                        # Version avec rotation seulement
-                        self.samples[idx] = rotated_features
-                        self.outputs[idx] = rotated_output
-                        idx += 1
-                        
-                        # Version avec rotation + symétrie (flip)
+                        samples_list.append(rotated_features)
+                        outputs_list.append(rotated_output)
+
                         flipped_features = np.array([flip_board(board) for board in rotated_features])
                         flipped_output = flip_move(rotated_output)
-                        
-                        self.samples[idx] = flipped_features
-                        self.outputs[idx] = flipped_output
-                        idx += 1
+                        samples_list.append(flipped_features)
+                        outputs_list.append(flipped_output)
+
+            if len(samples_list) > 0:
+                self.samples = np.array(samples_list, dtype=int)
+                self.outputs = np.array(outputs_list, dtype=int)
+            else:
+                self.samples = np.zeros((0, self.len_samples, 8, 8), dtype=int)
+                self.outputs = np.zeros((0, 8*8), dtype=int)
         else:
-            # Pour le mode lazy loading, on garde les indices et on applique l'augmentation à la volée
-            base_samples = len(self.game_files_name) * 30
+            samples_list = []
             num_augmentations = 8
-            self.samples=np.empty(base_samples * num_augmentations, dtype=object)
-            idx=0
-            
             for gm_idx,gm_name in tqdm(enumerate(self.game_files_name)):
-                game_log=load_game_log(self.path_dataset+gm_name)
-                last_board_state=copy.copy(game_log[0][-1])
-                is_black_winner=isBlackWinner(game_log[1][-1],last_board_state)
-                
-                for sm_idx in range(30):
-                    if is_black_winner:
-                        end_move=2*sm_idx
-                    else:
-                        end_move=2*sm_idx+1
-                    
-                    # Créer 8 versions augmentées
+                game_log = load_game_log(self.path_dataset+gm_name)
+                num_moves = len(game_log[1])
+                for end_move in range(num_moves):
                     for aug_idx in range(num_augmentations):
-                        rotation_k = aug_idx // 2  # 0,0,1,1,2,2,3,3
-                        apply_flip = aug_idx % 2 == 1  # False,True,False,True,...
-                        
-                        self.samples[idx]=SampleManager(gm_name,
-                                                        self.path_dataset,
-                                                        end_move,
-                                                        self.len_samples,
-                                                        is_black_winner)
-                        # Stocker les paramètres d'augmentation
-                        self.samples[idx].rotation_k = rotation_k
-                        self.samples[idx].apply_flip = apply_flip
-                        idx+=1
+                        rotation_k = aug_idx // 2
+                        apply_flip = aug_idx % 2 == 1
+                        sm = SampleManager(gm_name,
+                                           self.path_dataset,
+                                           end_move,
+                                           self.len_samples,
+                                           (end_move % 2 == 0))
+                        sm.rotation_k = rotation_k
+                        sm.apply_flip = apply_flip
+                        samples_list.append(sm)
+
+            self.samples = samples_list
         
         print(f"Number of samples (with augmentation): {len(self.samples)}")
         

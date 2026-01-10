@@ -1,0 +1,23 @@
+Historique d'entraînement - CNN_64_Dropout_Gridsearch_Tanh
+============================================================
+Date: 2026-01-09 08:35:53
+Optimizer: Adam
+Learning Rate: 0.01
+Meilleure époque: 2
+Époques complétées: 8
+Meilleure accuracy dev: 0.0887 (8.87%)
+Meilleure loss dev: 4.0310
+Temps total d'entraînement: 339.39 sec
+
+============================================================
+Historique par époque:
+Epoch    Train Acc    Dev Acc      Train Loss   Dev Loss    
+------------------------------------------------------------
+1        0.0797       0.0795       3.9901       3.9884      
+2        0.0886       0.0887       4.0206       4.0310      
+3        0.0732       0.0751       4.0294       4.1144      
+4        0.0771       0.0805       4.0281       4.0900      
+5        0.0733       0.0745       4.0248       4.1699      
+6        0.0779       0.0782       4.0321       4.1740      
+7        0.0748       0.0749       4.0289       4.1566      
+8        0.0735       0.0770       4.0295       4.1645      

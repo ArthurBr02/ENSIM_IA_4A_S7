@@ -265,4 +265,39 @@ if __name__ == '__main__':
     print(f"{'='*80}")
     print(f"Total d'expériences réussies: {len(all_results)}/{total_experiments}")
     print(f"Résultats sauvegardés dans: {csv_filename}")
+    
+    # Trouver le meilleur modèle basé sur dev_accuracy
+    if all_results:
+        best_result = max(all_results, key=lambda x: x['dev_accuracy'])
+        best_model_path = f"save_models_{best_result['model']}/model_{best_result['best_epoch']}_{str(time.time())}.pt"
+        
+        print(f"\n{'='*80}")
+        print(f"MEILLEUR MODÈLE")
+        print(f"{'='*80}")
+        print(f"Modèle: {best_result['model']}")
+        print(f"Chemin: {best_model_path}")
+        print(f"Dev Accuracy: {best_result['dev_accuracy']*100:.2f}%")
+        print(f"Dev Loss: {best_result['dev_loss']:.4f}")
+        print(f"Hyperparamètres:")
+        print(f"  - Learning Rate: {best_result['learning_rate']}")
+        print(f"  - Optimizer: {best_result['optimizer']}")
+        print(f"  - Dropout: {best_result['dropout']}")
+        print(f"  - Batch Size: {best_result['batch_size']}")
+        print(f"  - Best Epoch: {best_result['best_epoch']}")
+        
+        # Sauvegarder le nom du meilleur modèle dans un fichier texte
+        best_model_filename = csv_filename.replace('.csv', '_best_model.txt')
+        with open(best_model_filename, 'w') as f:
+            f.write(f"Best Model Path: {best_model_path}\n")
+            f.write(f"Model: {best_result['model']}\n")
+            f.write(f"Dev Accuracy: {best_result['dev_accuracy']}\n")
+            f.write(f"Dev Loss: {best_result['dev_loss']}\n")
+            f.write(f"Learning Rate: {best_result['learning_rate']}\n")
+            f.write(f"Optimizer: {best_result['optimizer']}\n")
+            f.write(f"Dropout: {best_result['dropout']}\n")
+            f.write(f"Batch Size: {best_result['batch_size']}\n")
+            f.write(f"Best Epoch: {best_result['best_epoch']}\n")
+        
+        print(f"\nInformations du meilleur modèle sauvegardées dans: {best_model_filename}")
+    
     print(f"{'='*80}\n")

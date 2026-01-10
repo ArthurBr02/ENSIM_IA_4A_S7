@@ -61,7 +61,7 @@ conf["dropout"]=0.2
 
 learning_rates = [0.005]
 optimizers = ["Adam"]
-dropouts = [0.3]
+dropouts = [0.2]
 
 for dropout in dropouts:
     conf['dropout'] = dropout

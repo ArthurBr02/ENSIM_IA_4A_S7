@@ -1,0 +1,2 @@
+Meilleurs modèlesMLP_optimise_model_48_1767919116.7898524_0.46385prct.pt: 4 points
+Meilleurs modèlesLSTM_optimise_model_19_1767916779.1295853_0.45634583333333334prct.pt: 6 points

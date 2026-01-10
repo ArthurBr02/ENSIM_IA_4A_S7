@@ -1,0 +1,2 @@
+bagarrearthur_cnn_model_20_41prct.pt: 5 points
+save_models_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochsmodel_5_1767913709.0121284.pt: 5 points

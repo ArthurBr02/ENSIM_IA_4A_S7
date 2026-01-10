@@ -126,15 +126,15 @@ def convert_model_to_torchscript(model_path, output_path=None, input_size=None, 
         # Mettre le modèle en mode évaluation
         model.eval()
         
-        # Sauvegarder d'abord les poids (toujours possible)
-        weights_path = output_path.replace('.pt', '_weights.pth')
-        torch.save({
-            'model_state_dict': model.state_dict(),
-            'model_class': type(model).__name__,
-            'input_size': input_size,
-            'board_size': 8
-        }, weights_path)
-        print(f"✓ Poids du modèle sauvegardés à: {weights_path}")
+        # Forcer la suppression de tout état caché pour les LSTM
+        if 'LSTM' in type(model).__name__:
+            # Réinitialiser les états cachés des LSTM
+            if hasattr(model, 'lstm'):
+                model.lstm.flatten_parameters()
+            # S'assurer que le modèle est bien en mode eval
+            for module in model.modules():
+                if isinstance(module, torch.nn.LSTM):
+                    module.flatten_parameters()
         
         # Test que le modèle fonctionne
         with torch.no_grad():
@@ -159,18 +159,11 @@ def convert_model_to_torchscript(model_path, output_path=None, input_size=None, 
                             output = model(example_input)
                             print(f"✓ Test de forward pass réussi - Forme: {shape} - Sortie: {output.shape}")
                             input_size = shape
-                            # Mettre à jour le fichier de poids avec la bonne forme
-                            torch.save({
-                                'model_state_dict': model.state_dict(),
-                                'model_class': type(model).__name__,
-                                'input_size': input_size,
-                                'board_size': 8
-                            }, weights_path)
                             break
                         except Exception as shape_error:
                             continue
                 else:
-                    print(f"Le modèle ne peut pas être testé, mais les poids sont sauvegardés.")
+                    print(f"Le modèle ne peut pas être testé, mais le modèle sera sauvegardé.")
         
         # Essayer TorchScript trace (peut échouer avec numpy)
         if trace:
@@ -191,12 +184,94 @@ def convert_model_to_torchscript(model_path, output_path=None, input_size=None, 
             except Exception as trace_error:
                 print(f"⚠ Tracing TorchScript échoué: {trace_error}")
                 print(f"\n📌 Les modèles avec numpy ne peuvent pas être convertis en TorchScript.")
-                print(f"📌 Utilisez le fichier de poids: {weights_path}")
-                return weights_path
+                print(f"📌 Sauvegarde du modèle complet en format PyTorch standard...")
+                
+                # Mettre le modèle en CPU pour éviter les problèmes de compatibilité
+                model_cpu = model.cpu()
+                model_cpu.eval()
+                
+                # Pour les LSTM, s'assurer que les paramètres sont aplatis
+                if 'LSTM' in type(model_cpu).__name__:
+                    for module in model_cpu.modules():
+                        if isinstance(module, torch.nn.LSTM):
+                            module.flatten_parameters()
+                
+                # Sauvegarder le modèle complet (pas juste les poids)
+                torch.save(model_cpu, output_path, _use_new_zipfile_serialization=True)
+                print(f"✓ Modèle complet sauvegardé à: {output_path}")
+                
+            
+            # Mettre le modèle en CPU pour éviter les problèmes de compatibilité
+            model_cpu = model.cpu()
+            model_cpu.eval()
+            
+            # Pour les LSTM, s'assurer que les paramètres sont aplatis
+            if 'LSTM' in type(model_cpu).__name__:
+                for module in model_cpu.modules():
+                    if isinstance(module, torch.nn.LSTM):
+                        module.flatten_parameters()
+            
+            # Sauvegarder le modèle complet (pas juste les poids)
+            torch.save(model_cpu, output_path, _use_new_zipfile_serialization=True)
+            print(f"✓ Modèle complet sauvegardé à: {output_path}")
+            
+            # Vérifier le rechargement
+            print("Vérification du modèle sauvegardé...")
+            loaded_model = torch.load(output_path, map_location='cpu', weights_only=False)
+            loaded_model.eval()
+            
+            # Test avec l'entrée sur CPU
+            example_input_cpu = example_input.cpu() if example_input.is_cuda else example_input
+            with torch.no_grad():
+                original_output = model_cpu(example_input_cpu)
+                test_output = loaded_model(example_input_cpu)
+                
+                # Vérifier que les sorties sont identiques
+                if torch.allclose(original_output, test_output, rtol=1e-5, atol=1e-5):
+                    print(f"✓ Modèle vérifié - Sorties identiques: {test_output.shape}")
+                else:
+                    print(f"⚠ ATTENTION: Les sorties diffèrent!")
+                    print(f"  Original: min={original_output.min():.6f}, max={original_output.max():.6f}")
+                    print(f"  Rechargé: min={test_output.min():.6f}, max={test_output.max():.6f}")
+                    diff = torch.abs(original_output - test_output).max()
+                    print(f"  Différence max: {diff:.6f}")
+            
+                    # Vérifier que les sorties sont identiques
+                    if torch.allclose(original_output, test_output, rtol=1e-5, atol=1e-5):
+                        print(f"✓ Modèle vérifié - Sorties identiques: {test_output.shape}")
+                    else:
+                        print(f"⚠ ATTENTION: Les sorties diffèrent!")
+                        print(f"  Original: min={original_output.min():.6f}, max={original_output.max():.6f}")
+                        print(f"  Rechargé: min={test_output.min():.6f}, max={test_output.max():.6f}")
+                        diff = torch.abs(original_output - test_output).max()
+                        print(f"  Différence max: {diff:.6f}")
+                
+                return output_path
         else:
             print("\n📌 Note: torch.jit.script n'est pas supporté pour ces modèles (contiennent du code numpy)")
-            print(f"📌 Utilisez le fichier de poids: {weights_path}")
-            return weights_path
+            print(f"📌 Sauvegarde du modèle complet en format PyTorch standard...")
+            # Sauvegarder le modèle complet (pas juste les poids)
+            # Mettre le modèle en CPU
+            model_cpu = model.cpu()
+            model_cpu.eval()
+            
+            # Pour les LSTM, aplatir les paramètres
+            if 'LSTM' in type(model_cpu).__name__:
+                for module in model_cpu.modules():
+                    if isinstance(module, torch.nn.LSTM):
+                        module.flatten_parameters()
+            
+            torch.save(model_cpu, output_path, _use_new_zipfile_serialization=True)
+            print(f"✓ Modèle complet sauvegardé à: {output_path}")
+            
+            # Vérifier le rechargement
+            print("Vérification du modèle sauvegardé...")
+            loaded_model = torch.load(output_path, map_location='cpu', weights_only=False)
+            loaded_model.eval()
+            with torch.no_grad():
+                test_output = loaded_model(example_input)
+            print(f"✓ Modèle vérifié - Sortie: {test_output.shape}")
+            return output_path
         
         # Vérifier que le modèle peut être rechargé
         print("Vérification du modèle TorchScript...")
@@ -208,17 +283,14 @@ def convert_model_to_torchscript(model_path, output_path=None, input_size=None, 
     except Exception as e:
         print(f"\n❌ Erreur lors de la conversion: {e}")
         print(f"\n📌 Note: Les modèles contenant du code numpy ne peuvent généralement pas être convertis en TorchScript.")
-        # Essayer de sauvegarder au moins les poids
+        print(f"📌 Sauvegarde du modèle complet en format PyTorch standard...")
+        # Sauvegarder le modèle complet (pas juste les poids)
         try:
-            weights_path = output_path.replace('.pt', '_weights.pth')
-            torch.save({
-                'model_state_dict': model.state_dict(),
-                'model_class': type(model).__name__,
-                'board_size': 8
-            }, weights_path)
-            print(f"✓ Poids du modèle sauvegardés à: {weights_path}")
-            return weights_path
-        except:
+            torch.save(model, output_path, _use_new_zipfile_serialization=True)
+            print(f"✓ Modèle complet sauvegardé à: {output_path}")
+            return output_path
+        except Exception as save_error:
+            print(f"❌ Impossible de sauvegarder le modèle: {save_error}")
             return None
 
 

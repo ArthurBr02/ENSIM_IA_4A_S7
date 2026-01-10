@@ -1,0 +1,22 @@
+Historique d'entraînement - CNN_32_64_128_Dropout_Gridsearch_Relu
+============================================================
+Date: 2026-01-09 04:34:54
+Optimizer: Adam
+Learning Rate: 0.01
+Meilleure époque: 1
+Époques complétées: 7
+Meilleure accuracy dev: 0.0207 (2.07%)
+Meilleure loss dev: 4.0925
+Temps total d'entraînement: 474.26 sec
+
+============================================================
+Historique par époque:
+Epoch    Train Acc    Dev Acc      Train Loss   Dev Loss    
+------------------------------------------------------------
+1        0.0210       0.0207       4.0939       4.0925      
+2        0.0210       0.0207       4.0896       4.0924      
+3        0.0210       0.0207       4.0895       4.0923      
+4        0.0210       0.0207       4.0895       4.0923      
+5        0.0210       0.0207       4.0895       4.0923      
+6        0.0210       0.0207       4.0895       4.0923      
+7        0.0210       0.0207       4.0895       4.0923      

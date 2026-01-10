@@ -389,7 +389,7 @@ Recalculing the best DEV: WAcc : 29.823333333333334%
 Fin entrainement LSTMHiddenState_Dropout_Relu_64 sur 20 epoch en (248.544508934021, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.2
 ```
 
-![Courbes d'apprentissage LSTM optimisé - Dropout = 0.2 + ReLU](results/plots/learning_curve_LSTMHiddenState_Dropout_Relu_64_20260107_143253.png)
+![Courbes d'apprentissage LSTM optimisé - Dropout = 0.2 + ReLU](results/plots/learning_curve_LSTMHiddenState_Dropout_Relu_64_20260107_143556.png)
 
 - Dropout = 0.1 + tanh
 ```logs
@@ -437,18 +437,7 @@ J'avais retiré le softmax pour le LSTMHiddenState. En le rajoutant, on voit que
 
 Je vais retenter un entraînement du modèle LSTM optimisé avec un dropout de 0.2 mais sans softmax en testant plusieurs configurations de couches.
 
-
-Tableau des résultats du grid search sur le LSTM optimisé avec les différentes architectures testées:
-| Nom du modèle                          | Optimizer | Dropout | Fonction d'activation | Temps d'entraînement (sc) | Batch size | Best learning Rate | Best Epoch | Accuracy train (%) | Accuracy dev (%) | Loss train | Loss dev | Date                   | Différence Accuracy train-dev (%) | Différence Loss dev-train (%) |
-|---------------------------------------|-----------|---------|-----------------------|---------------------------|------------|--------------------| ------------ |-------------------|------------------|------------|----------|------------------------|-----------------------------------|------------------------------|
-| LSTMHiddenState_Dropout_Relu_Gridsearch_64       | Adam      | 0.2     | Relu                  | 620.73                    | 128        | 0.005              | 20          | 34.83             | 30.8            | 2.3281     | 2.32     | 2026-01-08 10:04:42   | 4.03                              | 0.0081                       |
-| LSTMHiddenState_Dropout_Relu_Gridsearch_256      | Adam      | 0.2     | Relu                  | 542.9                     | 128        | 0.005              | 11          | 54.35             | 36.73           | 1.615      | 2.1172   | 2026-01-08 11:05:16   | 17.62                             | 0.5022                       |
-| LSTMHiddenState_Dropout_Relu_Gridsearch_512_256  | Adam      | 0.3     | Relu                  | 400.2                     | 256        | 0.005              | 14          | 75.46             | 35.29           | 0.9344     | 2.9477   | 2026-01-08 19:45:23   | 40.17                             | 2.0133                       |
-| LSTMHiddenState_Dropout_Relu_Gridsearch_512_256_128 | Adam | 0.2     | Relu                  | 974.52                    | 64         | 0.001              | 6           | 49.7              | 28.71           | 1.8241     | 2.6724   | 2026-01-07 23:40:28   | 20.99                             | 0.8483                       |
-| LSTMHiddenState_Dropout_Tanh_Gridsearch_64       | Adam      | 0.2     | Tanh                  | 615.17                    | 128        | 0.005              | 18          | 39.66             | 33.98           | 2.2305     | 2.221    | 2026-01-08 14:17:49   | 5.68                              | 0.0095                       |
-| LSTMHiddenState_Dropout_Tanh_Gridsearch_256      | Adam      | 0.3     | Tanh                  | 1026.71                   | 64         | 0.005              | 11          | 52.16             | 37.3            | 1.8576     | 2.1413   | 2026-01-08 05:14:27   | 14.86                             | 0.2837                       |
-| LSTMHiddenState_Dropout_Tanh_Gridsearch_512_256  | Adam      | 0.3     | Tanh                  | 716.91                    | 64         | 0.001              | 4           | 53.21             | 34.75           | 1.85       | 2.2339   | 2026-01-08 06:41:48   | 18.46                             | 0.3839                       |
-| LSTMHiddenState_Dropout_Tanh_Gridsearch_512_256_128 | Adam | 0.3     | Tanh                  | 888.6                     | 64         | 0.001              | 5           | 47.99             | 29.3            | 1.9892     | 2.6123   | 2026-01-08 08:48:17   | 18.69                             | 0.6231                       |
+Vous trouverez les résultats du grid search dans le tableau accessible [ici](https://docs.google.com/spreadsheets/d/1Q9143W9SJG1hCkDcZi2S996DMVV-jowTXU0HDCYXJvA/edit?gid=1968064696#gid=1968064696).
 
 À mon avis, le modèle LSTM optimisé avec l'architecture [256] et la fonction d'activation ReLU est le meilleur compromis entre performance et temps d'entraînement. Cependant, on observe toujours une différence significative entre l'accuracy sur le train set et le dev set, ce qui suggère qu'il y a encore de l'overfitting. Pour réduire davantage l'overfitting, il serait intéressant d'explorer des techniques supplémentaires telles que la régularisation L2 ou l'augmentation des données.
 
@@ -463,21 +452,7 @@ Comme le LSTM optimisé souffrait d'overfitting, j'ai fait la même analyse sur 
 J'ai décidé de faire un grid search sur différentes modèles de MLP pour voir si je peux améliorer ses performances. J'ai décidé, par contrainte de temps, de ne pas tester le batch size de 64 car ça augmente beaucoup trop le temps d'entraînement (ça a retiré 108 expériences à exécuter).
 
 
-Tableau des résultats du grid search sur le MLP optimisé avec les différentes architectures testées:
-| Nom du modèle                          | Optimizer | Dropout | Fonction d'activation | Temps d'entraînement (sc) | Batch size | Best learning Rate | Best Epoch | Accuracy train (%) | Accuracy dev (%) | Loss train | Loss dev | Date                   | Différence Accuracy train-dev (%) | Différence Loss dev-train (%) |
-|---------------------------------------|-----------|---------|-----------------------|---------------------------|------------|--------------------| ------------ |-------------------|------------------|------------|----------|------------------------|-----------------------------------|------------------------------|
-| MLP_64_Dropout_Gridsearch_Relu       | Adam      | 0.2     | Relu                  | 922.85                    | 128        | 0.001              | 18          | 24.26             | 23.53           | 2.9396     | 2.722    | 2026-01-07 21:03:53   | 0.73                              | 0.2176                       |
-| MLP_256_Dropout_Gridsearch_Relu      | Adam      | 0.4     | Relu                  | 525.66                    | 128        | 0.001              | 20          | 38.39             | 35.22           | 2.203      | 1.9754   | 2026-01-07 23:45:59   | 3.17                              | 0.2276                       |
-| MLP_256_128_Dropout_Gridsearch_Relu  | Adam     | 0.4     | Relu                  | 718.36                    | 128        | 0.001              | 20          | 34.13             | 30.67           | 2.5184     | 2.2755   | 2026-01-08 01:06:41   | 3.46                              | 0.2429                       |
-| MLP_512_256_Dropout_Gridsearch_Relu  | Adam      | 0.2     | Relu                  | 709.16                    | 128        | 0.001              | 20          | 43.85             | 35.84           | 2.1466     | 1.9854   | 2026-01-08 02:34:16   | 8.01                              | 0.1612                       |
-| MLP_512_256_128_Dropout_Gridsearch_Relu | Adam | 0.4     | Relu                  | 899.94                    | 128        | 0.001              | 20          | 38.09             | 31.75           | 2.4348     | 2.3264   | 2026-01-08 04:05:46   | 6.34                              | 0.1084                       |
-| MLP_512_256_128_64_Dropout_Gridsearch_Relu | Adam | 0.4     | Relu                  | 1082.85                   | 128        | 0.001              | 19          | 32.17             | 27.63           | 2.6893     | 2.5827   | 2026-01-08 05:51:02   | 4.54                              | 0.1066                       |
-| MLP_64_Dropout_Gridsearch_Tanh       | Adam      | 0.4     | Tanh                  | 528.29                    | 128        | 0.005              | 19          | 23.19             | 22.42           | 2.9964     | 2.8018   | 2026-01-08 08:06:02   | 0.77                              | 0.1946                       |
-| MLP_256_Dropout_Gridsearch_Tanh      | Adam      | 0.4     | Tanh                  | 523.34                    | 128        | 0.001              | 20          | 34.49             | 31.71           | 2.5426     | 2.2591   | 2026-01-08 09:15:09   | 2.78                              | 0.2835                       |
-| MLP_256_128_Dropout_Gridsearch_Tanh  | Adam     | 0.4     | Tanh                  | 698.05                    | 128        | 0.001              | 20          | 29.42             | 26.99           | 2.7871     | 2.5296   | 2026-01-08 10:35:42   | 2.43                              | 0.2575                       |
-| MLP_512_256_Dropout_Gridsearch_Tanh  | Adam      | 0.4     | Tanh                  | 702.4                     | 128        | 0.001              | 20          | 36.91             | 32.31           | 2.4729     | 2.201    | 2026-01-08 12:16:11   | 4.6                               | 0.2719                       |
-| MLP_512_256_128_Dropout_Gridsearch_Tanh | Adam | 0.4     | Tanh                  | 875.99                    | 128        | 0.001              | 20          | 31.94             | 28.04           | 2.6999     | 2.4422   | 2026-01-08 14:04:29   | 3.9                               | 0.2577                       |
-| MLP_512_256_128_64_Dropout_Gridsearch_Tanh | Adam | 0.4     | Tanh                  | 1056.46                   | 128        | 0.001              | 20          | 25.4              | 22.8            | 2.9199     | 2.7366   | 2026-01-08 16:01:31   | 2.6                               | 0.1833                       |
+Vous trouverez les résultats du grid search dans le tableau accessible [ici](https://docs.google.com/spreadsheets/d/1Q9143W9SJG1hCkDcZi2S996DMVV-jowTXU0HDCYXJvA/edit?gid=181947160#gid=181947160).
 
 Selon moi, le meilleur modèle est le MLP_512_256_Dropout_Gridsearch_Relu car il a la meilleure accuracy sur le dev set (35.84%) et une différence accuracy train-dev de 8.01% ce qui est acceptable. 
 
@@ -490,10 +465,37 @@ Les modèles ont toujours des performances en parties qui sont pas en accord ave
 
 Je vais donc passer au CNN pour voir si je peux obtenir de meilleures performances et je ferais l'augmentation des données après ça.
 
-# Conclusion de l'optimisation
+# Conclusion de l'optimisation des modèles MLP et LSTM
 Après avoir optimisé les modèles MLP et LSTM, j'ai constaté que le modèle LSTM optimisé avec l'architecture [256] et la fonction d'activation ReLU offre les meilleures performances, avec une accuracy de 36.73% sur le dev set. Cependant, il souffre encore d'overfitting, comme en témoigne la différence significative entre l'accuracy sur le train set et le dev set. Le modèle MLP optimisé avec l'architecture [512, 256] et la fonction d'activation ReLU présente également de bonnes performances, avec une accuracy de 35.84% sur le dev set, et un comportement plus stable en termes de généralisation. Cependant, les performances en parties jouées ne sont pas entièrement cohérentes avec les performances sur le dev set.
 
-# CNN TODO
+# CNN
+Pour l'implémentation du CNN, j'ai créé plusieurs modèles avec différentes architectures et fonctions d'activation. J'ai effectué un grid search similaire à celui réalisé pour les modèles MLP et LSTM, en testant diverses combinaisons de couches convolutives, de dropout, et de fonctions d'activation (ReLU, Tanh).
+
+Vous trouverez les résultats du grid search dans le tableau accessible [ici](https://docs.google.com/spreadsheets/d/1Q9143W9SJG1hCkDcZi2S996DMVV-jowTXU0HDCYXJvA/edit?usp=sharing).
+
+D'après les résultats obtenus, je vais conserver deux modèles de CNN pour faire de l'optimisation dessus:
+
+CNN_64_128_256_Dropout_Gridsearch_Relu (43.87% accuracy sur dev set en 5 epochs)
+![Courbes d'apprentissage CNN optimisé - Architecture [64, 128, 256] + ReLU](results/plots\learning_curve_CNN_64_128_256_Dropout_Gridsearch_Relu_20260109_200709.png)
+Paramètres:
+- Learning rate= 0.001
+- Optimizer= Adam
+- Dropout= 0.2
+- Batch size= 128
+- Nombre de poids entraînables= 1418304
+- Temps d'entraînement= 389sc
+
+CNN_32_64_128_Dropout_Gridsearch_Relu (44.15% accuracy sur dev set en 10 epochs)
+![Courbes d'apprentissage CNN optimisé - Architecture [32, 64, 128] + ReLU](results/plots\learning_curve_CNN_32_64_128_Dropout_Gridsearch_Relu_20260109_045319.png)
+Paramètres:
+- Learning rate= 0.001
+- Optimizer= Adam
+- Dropout= 0.2
+- Batch size= 64
+- Nombre de poids entraînables= 617024
+- Temps d'entraînement= 1081sc
+
+Pour ces deux modèles, on peut remarquer qu'on a énormément d'overfitting car la courbe de loss de dev croit alors que celle de train diminue (Modèle 1: 22.76%, Modèle 2: 24.68%). Il y a aussi une énorme différence entre l'accuracy sur le train set et le dev set (Modèle 1: 31.72%, Modèle 2: 37.75%). Le score est très bon sur le dev set mais la complexité des modèles fait qu'ils ont du mal à généraliser sur si peu de données. Je vais retenter l'expérience avec l'augmentation des données. Voir section [CNN optimisé avec données augmentées](#cnn-optimisé-avec-données-augmentées).
 
 # CNN-LSTM TODO
 
@@ -511,10 +513,17 @@ J'ai donc réentraîné les modèles optimisés LSTM et MLP avec ce nouveau data
 
 ### LSTM optimisé avec données augmentées
 ```logs
-TODO
+Recalculing the best DEV: WAcc : 45.63458333333333%
+Fin entrainement LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs sur 20 epoch en (1677.0660762786865, 'sc') | Paramètres: Learning rate= 0.005 - Optimizer= Adam - Dropout= 0.3
 ```
 
-TODO: insérer les logs et la courbe d'apprentissage du LSTM optimisé avec données augmentées + analyse
+![Courbes d'apprentissage LSTM optimisé avec données augmentées](results/plots\learning_curve_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_20260109_010106.png)
+
+En analysant la courbe d'apprentissage du LSTM optimisé avec les données augmentées, on peut observer que l'accuracy sur le dev set a considérablement augmenté pour atteindre 45.63%, ce qui est une amélioration significative par rapport à l'entraînement précédent sans augmentation des données (36.73%). De plus, l'overfitting semble avoir été réduit, car la différence entre l'accuracy sur le train set et le dev set est moindre (~6%). Cependant, le temps d'entraînement a également augmenté de manière significative (1677sc contre 542sc avant augmentation des données).
+
+On peut remarquer que la loss sur dev et sur train sont très proches (1.3% d'écart), ce qui indique que le modèle généralise bien.
+
+Vu le gain en performance général, cela semble être un compromis acceptable. Je vais sauvegarder ce modèle et le faire jouer des parties contre le MLP optimisé avec données augmentées (Nom du modèle: **save_models_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs/model_19_1767916779.1295853_0.45634583333333334prct**).
 
 ### MLP optimisé avec données augmentées
 ```logs
@@ -525,17 +534,165 @@ Fin entrainement MLP_512_256_Dropout_Relu_Post_Optimisation sur 20 epoch en (318
 ![Courbes d'apprentissage LSTM optimisé avec données augmentées](results/plots\learning_curve_MLP_512_256_Dropout_Relu_Post_Optimisation_20260108_234222.png)
 
 Grâce à la courbe d'apprentissage, on peut remarquer que l'overfitting est quasiment nul sur cet entrainement avec un très bon score de 38% par rapport à avant.
-Cependant, le temps d'entraînement a énormément augmenté (3188sc contre 709sc avant augmentation des données).
+Cependant, le temps d'entraînement a énormément augmenté (3188sc contre 709sc avant augmentation des données). Mais vu le gain en précision, c'est plutôt correct.
 
-## Génération de parties TODO
+Comme j'ai remarqué que la courbe n'avait pas terminé de monter, j'ai décidé de lancer l'entrainement avec plus d'epochs (50):
+```logs
+Recalculing the best DEV: WAcc : 46.385%
+Fin entrainement MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs sur 50 epoch en (4120.490372419357, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.1
+```
+
+![Courbes d'apprentissage LSTM optimisé avec données augmentées - 50 epochs](results/plots\learning_curve_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_20260109_014121.png)
+
+Dans ce graphique, on voit que l'accuracy sur le dev set a continué d'augmenter pour atteindre 46.38% après 50 epochs, ce qui est une amélioration significative par rapport aux entraînements précédents. De plus, l'overfitting reste très faible, indiquant que le modèle généralise plutôt bien. Lors ce cet entrainement, le temps d'entraînement a encore augmenté (4120sc contre 3188sc pour 20 epochs), mais le gain en performance semble justifier ce coût supplémentaire. De plus, on peut remarquer que l'overfitting a fortement diminué par rapport à l'entrainement avec 20 epochs (9% d'écart entre train et dev contre 21% avant). Je vais donc garder ce modèle MLP optimisé avec données augmentées (Nom du modèle: **save_models_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs/model_48_1767919116.7898524_0.46385prct**) pour le faire jouer des parties contre le LSTM optimisé avec données augmentées.
+
+### CNN optimisé avec données augmentées
+J'ai fait l'entrainement des deux modèles CNN optimisés avec les données augmentées par transformation sur 20 epochs chacun. Il y a eu un énorme gain de performance sur les deux modèles, malgré un temps d'entraînement très élevé dû à la taille du dataset (1440240 samples) et un overfitting toujours présent.
+
+Modèle 1: CNN_64_128_256_Dropout_Gridsearch_Relu
+```logs
+Recalculing the best DEV: WAcc : 52.22458333333333%
+Fin entrainement CNN_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs sur 20 epoch en (2260.858628511429, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage CNN optimisé avec données augmentées - Modèle 1](results/plots\learning_curve_CNN_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_20260109_225552.png)
+
+Pour ce modèle, on voit sur la courbe de loss que l'overfitting est arrivé très tôt, aux alentours de 4 epochs. La loss sur dev stagne alors que celle sur train diminue fortement. De plus, si on regarde la courbe d'accuracy, celle de dev stagne aux alentours de 52% vers 10 epochs alors que celle de train augmente jusqu'à environ 60%.
+
+
+Modèle 2: CNN_32_64_128_Dropout_Gridsearch_Relu
+```logs
+Recalculing the best DEV: WAcc : 51.65333333333333%
+Fin entrainement CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs sur 20 epoch en (2199.1251327991486, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2
+```
+
+![Courbes d'apprentissage CNN optimisé avec données augmentées - Modèle 2](results/plots\learning_curve_CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_20260109_225502.png)
+
+Pour ce modèle, on observe une convergence de la loss sur les deux sets après 18 epochs, ce qui indique une très bonne généralisation de la part de ce modèle. En plus, elle est très basse (~1.3), donc c'est des résultats très encourangants. Pour la courbe d'accuracy, on voit que l'accuracy sur le dev set atteint environ 51.65%, ce qui est un bon score. Cependant, il y a une différence notable entre l'accuracy sur le train set (environ 60%) et le dev set, suggérant un léger overfitting. Je vais garder ce modèle CNN optimisé et l'entraîner avec les données créées par confrontation entre modèles (voir section [Génération de parties](#génération-de-parties)) pour voir si je peux encore améliorer ses performances (modèle nommé **save_models_CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs/model_20_1767995697.4717474_0.5165333333333333prct.pt**).
 
 Pour augmenter les données disponibles, je vais passer par l'implémentation de la confrontation entre deux modèles. En faisant jouer deux modèles l'un contre l'autre, on peut générer de nouvelles parties qui pourront être utilisées pour entraîner les modèles.
 
-# League Othello
-J'ai utilisé un modèle CNN (un des plus performants) pour le convertir au format "jif" et ainsi pouvoir l'utiliser sur le site [League Othello](https://huggingface.co/spaces/MeysamSh/Othello-League). J'ai réussi à l'uploader et à jouer contre mon modèle, par contre je n'ai pas réussi à lancer une league (ça m'affiche une erreur quand je clique sur "Run League").
+## Utilisation de toutes les données et non pas seulement les parties gagnées TODO
+
+Pendant le développement de la génération de parties par deux IA, j'ai rencontré un problème de nombre de mouvements/plateaux dans le fichier h5 qui était potentiellement inférieur à 60 (certains fichiers avaient 58 ou 59 mouvements/plateaux). Après analyse, j'ai remarqué que certaines parties se terminaient avant d'atteindre 60 mouvements, car un joueur ne pouvait plus jouer (aucun coup légal disponible). Pour résoudre ce problème, j'ai d'abord réalisé la modification pour utiliser toutes les parties dans le dataset et non pas que celles qui ont 60 coups.
+
+Pour ce faire, j'ai fait les modifications suivantes dans data.py:
+- Retrait des boucles avec des valeurs fixes (30), de façon à lire la taille de la partie dynamiquement.
+- Le joueur courant est déterminé en à l'aide de la parité du coup en cours.
+
+## Génération de parties
+
+J'ai d'abord fait un script pour déterminer le contenu d'un fichier .h5 et voir ce qu'il faut mettre dedans. 
+D'après ce que j'ai compris, on a une liste de coups joués, la liste des plateaux et une clé dans le fichier h5, je vais essayer de faire la même chose en partant du fichier game.py.
+
+Pour ce faire, j'ai copié le fichier game.py dans un nouveau fichier generate_h5_files.py que j'ai modifié. J'ai choisi un model que j'ai défini en haut du fichier pour les deux joueurs. Pendant la boucle de jeu de la partie, je mets dans des listes les mouvements et les plateaux. À la fin de la partie, j'enregistre ces listes dans un fichier h5 et dans un fichier json pour faire du debug.
+
+J'ai généré 2000 parties en faisant s'affronter les modèles CNN optimisés et MLP optimisés (mes deux meilleurs modèles) avec données augmentées en environ 582 secondes.
+
+### Entrainement avec les nouvelles données
+Après avoir généré 2000 fichiers h5 avec des parties jouées entre différents modèles optimisés, j'ai réentraîné le modèle MLP optimisé (MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data) avec ces nouvelles données en plus des données augmentées par transformation.
+
+Pour tester et pour économiser du temps de calcul, je vais regarder uniquement sur 1 epoch, puis après j'entraînerai un modèle complet sur 20 epochs avec les nouvelles données.
+
+#### Entrainement avec uniquement les données générées par IA + transformations
+```logs
+Number of samples (with augmentation): 96000
+Development Dataste ... 
+1000it [00:05, 185.00it/s]
+Number of samples (with augmentation): 480000
+MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data(
+  (lin1): Linear(in_features=64, out_features=512, bias=True)
+  (lin2): Linear(in_features=512, out_features=256, bias=True)
+  (lin3): Linear(in_features=256, out_features=64, bias=True)
+  (dropout): Dropout(p=0.2, inplace=False)
+)
+Number of parameters: 181056
+epoch : 1/50 - loss = 2.671904208334939
+Accuracy Train:40.98%, Dev:0.33% ; Time:219 (last_train:155, last_pred:63)
+*************** The best score on DEV 1 :0.332%
+```
+
+J'ai utilisé un modèle MLP optimisé pour tester ce dataset. Cependant, j'ai remarqué que l'entrainement donne des résultats vraiment très décevants, 46% d'accuracy sur train et 0.33% sur dev set dès la première epoch. J'ai tendance à me dire que le dataset généré est uniquement composé de données générées via IA donc peu représentatives des vraies parties jouées par des humains. Je vais donc ré-entraîner le modèle MLP optimisé avec les données originales + données augmentées par transformation + données générées par IA.
+
+#### Entrainement avec données originales + données augmentées par transformation + données générées par IA
+```logs
+Number of samples (with augmentation): 2976480
+Development Dataste ... 
+1000it [00:05, 190.95it/s]
+Number of samples (with augmentation): 480000
+MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs_Generation_Data(
+  (lin1): Linear(in_features=64, out_features=512, bias=True)
+  (lin2): Linear(in_features=512, out_features=256, bias=True)
+  (lin3): Linear(in_features=256, out_features=64, bias=True)
+  (dropout): Dropout(p=0.2, inplace=False)
+)
+Number of parameters: 181056
+epoch : 1/50 - loss = 2.903349407895684
+Accuracy Train:29.25%, Dev:29.89% ; Time:122 (last_train:72, last_pred:50)
+*************** The best score on DEV 1 :29.886%
+```
+
+En utilisant les données originales en plus des données générées, le tout augmenté par transformation, on peut voir que le score de précision sur dev est beaucoup mieux. On voit aussi qu'on a maintenant quasiment 3000000 samples dans le jeu d'entrainement.
+
+Je vais maintenant essayer d'entraîner le modèle CNN optimisé avec ces nouvelles données sur 20 epochs pour voir la différence.
+
+```logs
+```
+
+## CNN optimisé vs LSTM optimisé TODO TODO TODO
+```logs
+```
+
+# Entrainement final TODO TODO TODO
+Pour l'entrainement final, j'ai entrainé le modèle TODO optimisé avec données augmentées sur 100 epochs pour voir si je peux encore améliorer les performances. J'ai regroupé les données de test/dev dans le train set augmenté pour avoir plus de données d'entrainement.
+
+```logs
+TODO
+```
+
+# League Othello TODO - à héberger en local
+J'ai hébergé la League Othello en local pour faire s'affronter les différents modèles optimisés entre eux. 
+
+Fais des tableaux de scores pour chaque modèle avec le nombre de victoires et le score moyen.
+
+Voici les résultats des différents affrontements:
+
+### 1er affrontement (Uniquement avec MLP et LSTM optimisés avec données augmentées):
+
+| Rang | Modèle                                                                                 | Victoires | Score Moyen |
+|------|----------------------------------------------------------------------------------------|-----------|--------------|
+| 1    | MLP_optimise_model_48_1767919116.7898524_0.46385prct_jit.pt                           | 18        | 13           |
+| 2    | Othello_Overlord.pt                                                                   | 16        | 9            |
+| 3    | Stable_Genius.pt                                                                      | 16        | 8            |
+| 4    | Convolution_Conqueror.pt                                                              | 14        | 5            |
+| 5    | Edge_Hog.pt                                                                           | 14        | 5            |
+| 6    | Chaotic_Neutral.pt                                                                    | 14        | -2           |
+| 7    | Multilayer_Menace.pt                                                                  | 13        | 2            |
+| 8    | RL_Qlearner_the_Confused.pkl                                                          | 12        | -2           |
+| 9    | Midgame_Magician.pt                                                                   | 11        | 1
+| 10   | The_CoinFlipper.pt                                                                    | 11        | -2           |
+| 11   | Random                                                                                | 10        | -5           |
+| 12   | The_Tile_Donor.pt                                                                      | 5         | -13          |
+| 13   | LSTM_optimise_model_19_1767916779.1295853_0.45634583333333334prct_torchscript.pt       | 3         | -19          |
+
+
+On peut remarquer que le modèle MLP optimisé avec données augmentées est très performant dans cette league, si bien qu'il termine premier du classement.
+Les très mauvaises performances du modèle LSTM s'expliquent par le fait que, lors de l'export, une conversion de l'entrée doit être faite (le modèle attend quelque chose de taille 64 et on lui donne une matrice 8x8), donc cette conversion fait perdre les poids et rend le modèle inefficace. Par contrainte de temps je n'ai pas pu corriger ce problème, donc je vais exclure le modèle LSTM des prochains affrontements. 
+
 
 # Game.py
-En faisant jouer plusieurs modèles les uns contre les autrs, j'ai remarqué que les parties effectuées étaient toujours strictement les mêmes pour deux modèles données. J'ai donc modifié un peu la fonction `find_best_move` pour ajouter un peu d'aléatoire dans le choix des coups à jouer, comme dans une partie réelle.
+En faisant jouer plusieurs modèles les uns contre les autres, j'ai remarqué que les parties effectuées étaient toujours strictement les mêmes pour deux modèles données. J'ai donc modifié un peu la fonction `find_best_move` pour ajouter un peu d'aléatoire dans le choix des coups à jouer, comme dans une partie réelle.
 
 # Utilisation GPU/CPU
 Lors de l'entrainement, mon GPU est faiblement utilisé (7%). Le CPU lui a des piques à 100% mais en moyenne il est à 15%. Je pense qu'il y a un problème de lenteur au chargement des données. Quand j'augmente le batch size, le temps d'entrainement diminue mais la précision du modèle est impactée négativement. Je pense que le goulot d'étranglement vient du CPU qui n'arrive pas à fournir les données assez rapidement au GPU. En passant de LSTM/MLP à CNN, l'utilisation du GPU a augmenté à 50%, donc les modèles LSTM et MLP sont probablement trop simples pour exploiter pleinement la puissance du GPU.
+
+# Conclusion générale TODO
+## Optimisation
+
+## Modèles
+
+## Fonctions d'activation
+
+## Optimizers
+
+## Augmentation des données
