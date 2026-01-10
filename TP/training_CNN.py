@@ -30,7 +30,7 @@ dataset_conf["path_dataset"]="./generated_dataset/h5/"
 dataset_conf['batch_size']=1000
 
 print("Training Dataste ... ")
-ds_train = CustomDatasetManyAugmented(dataset_conf,load_data_once4all=True)
+ds_train = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
 trainSet = DataLoader(ds_train, 
                       batch_size=dataset_conf['batch_size'])
 
@@ -43,7 +43,7 @@ dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=1000
 
 print("Development Dataste ... ")
-ds_dev = CustomDatasetManyAugmented(dataset_conf,load_data_once4all=True)
+ds_dev = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
 devSet = DataLoader(ds_dev, 
                     batch_size=dataset_conf['batch_size'])
 
@@ -67,7 +67,7 @@ for dropout in dropouts:
     for optimizer in optimizers:
         for lr in learning_rates:
             
-            model = CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm(conf).to(device)
+            model = CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm(conf).to(device)
             print(model)
 
             n = count_parameters(model)

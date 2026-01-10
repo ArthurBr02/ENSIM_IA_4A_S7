@@ -684,7 +684,7 @@ Augmenter la complexité des modèles va augmenter le temps d'entraînement, mai
 Pour la suite je vais me concentrer uniquement sur le modèle CNN qui est plus adapté pour ce type de données (images/plateaux) et qui offre de meilleures performances que les autres modèles.
 
 ### Augmentation de la complexité des modèles
-#### CNN TODO
+#### CNN
 L'entraînement sera fait sur 200 epochs avec early stopping de 10 epochs et un batch size de 1000 pour voir si augmenter la complexité permet de réduire le plateau de performance.
 
 Pour le CNN, je vais passer créer un nouveau CNN avec comme configuration:
@@ -740,11 +740,50 @@ Je vais faire le test avec le modèle suivant:
 On se retrouve avec 389057 poids entraînables pour un dataset de 2.9 millions de samples.
 
 ```logs
+Recalculing the best DEV: WAcc : 53.03604166666667%
+n entrainement CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm sur 34 epoch en (5526.1315586566925, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 1000
+best_epoch: 23
 ```
 
-# CNN-LSTM TODO
+![Courbes d'apprentissage CNN avec Batch Normalization](results/plots\learning_curve_CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm_20260110_123452.png)
 
-# Transformer TODO
+En regardant les courbes, on voit qu'à partir de 5/10 epochs le modèle commence à stagner et donc l'accuracy sur le dev set n'augmente plus et la loss sur dev ne baisse plus. Cela nous indique que le modèle a "terminé d'apprendre" et qu'on a atteint les limites de ses capacités. La complexité du modèle est encore insuffisante pour capturer toute la complexité du jeu, malgré l'utilisation de la batch normalization. Le temps d'entraînement est plus faible que les autres modèles (5526sc contre 10932sc pour le modèle sans batch norm) mais le score est aussi plus faible (53.03% contre 55.23% pour le modèle sans batch norm). Je vais essayer de doubler les neurones à chaque couche pour voir si ça améliore les performances.
+
+Je vais faire le test avec le modèle suivant:
+- Couches convolutives: [64, 128, 256, 512]
+- Batch normalization après chaque couche convolutive
+- Pas de dropout
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+- Batch size: 1000
+
+On se retrouve avec 1552257 poids entraînables pour un dataset de 2.9 millions de samples.
+
+```logs
+Recalculing the best DEV: WAcc : 53.13708333333334%
+Fin entrainement CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm sur 21 epoch en (6178.024012804031, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 1000
+best_epoch: 11
+```
+
+![Courbes d'apprentissage CNN avec Batch Normalization - Modèle plus complexe](results/plots\learning_curve_CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm_20260110_175847.png)
+
+Suite à cette expérience, on peut voir qu'augmenter la complexité du modèle n'a pas donné de gain de performance mais plutôt une dégrédation de celles-ci (53.14% contre 55.24% pour le CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data). De plus, le temps d'entraînement a énormément augmenté (6178sc contre 5526sc avant). On remarque aussi que l'overfitting est très présent, ce qui fait que ce modèle n'est pas pertinent pour la suite.
+
+#### Conclusion sur les CNN
+Pour les CNN et d'après toutes les expériences réalisées, le modèle qui offre les meilleures performances est le suivant:
+- Couches convolutives: [32, 64, 128, 256]
+- Dropout: 0.2
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+- Batch size: 1000
+Ce modèle atteint 55.23% d'accuracy sur le dev set sans overfitting. Je vais donc l'utiliser pour l'entrainement final.
+
+Modèle sauvegardé sous le nom: **save_models_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data/model_29_1768016088.204804_0.5523875prct**.
+
+# CNN-LSTM TODO
+Le modèle CNN-LSTM combine les avantages des CNN pour extraire les caractéristiques spatiales des plateaux de jeu et des LSTM pour capturer les dépendances temporelles entre les mouvements successifs. Pour implémenter ce modèle, TODO TODO TODO
 
 # Entrainement final TODO TODO TODO
 Pour l'entrainement final, j'ai entrainé le modèle TODO optimisé avec données augmentées sur 100 epochs pour voir si je peux encore améliorer les performances. J'ai regroupé les données de test/dev dans le train set augmenté pour avoir plus de données d'entrainement.

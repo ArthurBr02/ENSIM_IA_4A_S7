@@ -401,3 +401,5 @@ timestamp,model_name,optimizer,learning_rate,best_epoch,epochs_completed,best_de
 2026-01-10 02:37:38,LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data,Adam,0.005,20,20,0.49425,1.415398935476939,2960.11
 2026-01-10 05:53:01,CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data,Adam,0.001,29,50,0.5523875,1.2011583471049865,10932.81
 2026-01-10 06:17:11,CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data,Adam,0.001,7,28,0.5633541666666667,1.166781797632575,11247.05
+2026-01-10 12:34:52,CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm,Adam,0.001,23,34,0.5303604166666667,1.2936100828150907,5526.13
+2026-01-10 17:58:47,CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm,Adam,0.001,11,22,0.5313708333333333,1.288919423893094,6178.02
