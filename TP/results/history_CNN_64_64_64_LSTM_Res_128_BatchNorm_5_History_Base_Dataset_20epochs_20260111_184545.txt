@@ -1,0 +1,22 @@
+Historique d'entraînement - CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs
+============================================================
+Date: 2026-01-11 18:45:45
+Optimizer: Adam
+Learning Rate: 0.05
+Meilleure époque: 1
+Époques complétées: 7
+Meilleure accuracy dev: 0.0167 (1.67%)
+Meilleure loss dev: 4.1217
+Temps total d'entraînement: 750.70 sec
+
+============================================================
+Historique par époque:
+Epoch    Train Acc    Dev Acc      Train Loss   Dev Loss    
+------------------------------------------------------------
+1        0.0167       0.0167       4.1369       4.1217      
+2        0.0167       0.0167       4.1333       4.1247      
+3        0.0167       0.0167       4.1339       4.1235      
+4        0.0167       0.0167       4.1338       4.1235      
+5        0.0167       0.0167       4.1338       4.1235      
+6        0.0167       0.0167       4.1338       4.1235      
+7        0.0167       0.0167       4.1338       4.1235      

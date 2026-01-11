@@ -704,7 +704,16 @@ Fin entrainement CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugm
 ![Courbes d'apprentissage CNN plus complexe](results/plots\learning_curve_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_20260110_055301.png)
 
 Sur ce modèle, on peut remarquer qu'on a toujours un plateau sur l'accuracy de dev qui début à la 10ème epoch. On a un gain de performances concret par rapport au modèle précédent, mais le temps d'entrainement a énormément augmenté (10932sc contre 3294sc avant). On peut aussi remarquer que l'overfitting est toujours absent, ce qui est un très bon point. L'entraînement sur 200 epochs était pour voir jusqu'où le modèle irait, mais il s'est arrêté à la 50ème epoch à cause de l'early stopping, donc les prochains essais se feront sur maximum 50 epochs.
+Je vais conserver ce modèle car il offre de bons résultats.
 
+##### Variation du learning rate
+Je vais aussi essayer de briser le plateau en faisant varier le learning rate pendant l'entraînement. Je vais commencer avec un learning rate de 0.001 qui sera divisé par deux en cas de valeur ne changeant pas pendant 2 epochs.
+
+```logs
+TODO
+```
+
+##### Ajout de complexité supplémentaire
 
 Je vais aussi tester un modèle plus complexe configuré comme suit pour voir si augmenter encore la complexité améliore les performances ou les dégrades:
 - Couches convolutives: [64, 128, 256, 512, 1024]
@@ -783,7 +792,164 @@ Ce modèle atteint 55.23% d'accuracy sur le dev set sans overfitting. Je vais do
 Modèle sauvegardé sous le nom: **save_models_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data/model_29_1768016088.204804_0.5523875prct**.
 
 # CNN-LSTM TODO
-Le modèle CNN-LSTM combine les avantages des CNN pour extraire les caractéristiques spatiales des plateaux de jeu et des LSTM pour capturer les dépendances temporelles entre les mouvements successifs. Pour implémenter ce modèle, TODO TODO TODO
+Le modèle CNN-LSTM combine les avantages des CNN pour comprendre les caractéristiques du plateau et du LSTM pour la mémoire des coups joués.
+
+## Essai 1
+Pour ce modèle, j'ai décidé de repartir du modèle CNN optimisé gardé plus haut (même paramètres) et d'ajouter une couche LSTM après les couches convolutives.
+
+Voici les paramètres du modèle:
+- Couches convolutives: [32, 64, 128, 256]
+- Couche LSTM: 256 neurones (input_size=256, hidden_size=256, num_layers=1)
+- Dropout: 0.2
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+
+Modèles: 
+- CNN_32_64_128_256_LSTM_256_Dropout_5_History_Base_Dataset_20epochs
+- CNN_32_64_128_256_LSTM_256_Dropout_5_History_Augmented_Dataset_20epochs
+
+On a 17462080 poids entraînables pour un dataset de 360060 (Base) et 2.9 millions de samples (Augmenté).
+
+Je vais d'abord entrainer le modèle sur 20 epochs sur le dataset de base pour voir si le modèle est capable d'apprendre correctement. Ensuite je passerai sur le dataset augmenté.
+
+### Dataset original
+Pour ce dataset je vais faire l'entrainement sur 20 epochs avec early stopping de 5 epochs et un batch size de 128 pour une question d'optimisation du temps d'entrainement. Vu la taille et la complexité du modèle, on peut s'attendre a beaucoup d'overfitting.
+```logs
+Recalculing the best DEV: WAcc : 48.07666666666667%
+Fin entrainement CNN_32_64_128_256_LSTM_256_Dropout_5_History_Base_Dataset_20epochs sur 12 epoch en (1347.2515943050385, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 128
+best_epoch: 6
+```
+
+![Courbes d'apprentissage CNN-LSTM - Dataset original](results/plots\learning_curve_CNN_32_64_128_256_LSTM_256_Dropout_5_History_Base_Dataset_20epochs_20260111_133600.png)
+
+Comme prévu initialement, il y a énorémement d'overfitting (66.87% pour l'accuracy et de 131,75% pour la loss). Comme le nombre de paramètres est très élevé, le modèle a du mal à généraliser sur le dev set. Cependant, on peut voir que l'accuracy sur le dev set atteint 48.07%, ce qui est un bon score pour un premier entrainement. Je vais essayer l'entrainement sur le dataset augmenté pour voir si les performances s'améliorent.
+
+### Dataset augmenté
+Pour cet entrainement, je vais passer à un batch size de 1000 pour optimiser le temps d'entrainement. L'entrainement sera fait sur 20 epochs avec early stopping de 5 epochs.
+
+```logs
+Recalculing the best DEV: WAcc : 54.5625%
+Fin entrainement CNN_32_64_128_256_LSTM_256_Dropout_5_History_Augmented_Dataset_20epochs sur 12 epoch en (4988.91354060173, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 1000
+best_epoch: 7
+```
+
+![Courbes d'apprentissage CNN-LSTM - Dataset augmenté](results/plots\learning_curve_CNN_32_64_128_256_LSTM_256_Dropout_5_History_Base_Dataset_20epochs_20260111_150900.png)
+
+On peut voir que même si le modèle atteint un très bon score de 54.56% sur le dev set, l'overfitting est toujours très présent (environ 15% entre train et dev à la fin de l'entrainement). Le temps d'entrainement a énormément augmenté (4988sc contre 3294sc pour le CNN optimisé seul). On remarque aussi qu'on atteint un plateau sur l'accuracy et qu'à la fin de l'entrainement, la dev loss remonte. J'en conclue que le modèle overfit et apprend les données d'entrainement au lieu de généraliser. 
+
+## Essai 2
+Pour ce second essai, je vais réduire la complexité du CNN en enlevant une couche convolutive et en uniformisant le nombre de neurones dans chaque couche. Je vais aussi réduire la taille de la couche LSTM pour diminuer le nombre de paramètres et donc l'overfitting.
+
+Le modèle sera le suivant:
+- Couches convolutives: [64, 64, 64]
+- Couche LSTM: 128 neurones (input_size=64, hidden_size=128, num_layers=1)
+- Dropout: 0.2
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+
+Modèle:
+- CNN_64_64_64_LSTM_128_Dropout_5_History_Base_Dataset_20epochs
+
+On a 2246464 poids entraînables pour un dataset de 360060 (Base) et 2.9 millions de samples (Augmenté).
+
+### Dataset original
+Pour ce dataset je vais faire l'entrainement sur 20 epochs avec early stopping de 5 epochs et un batch size de 128 pour une question d'optimisation du temps d'entrainement.
+```logs
+Recalculing the best DEV: WAcc : 46.58833333333333%
+Fin entrainement CNN_64_64_64_LSTM_128_Dropout_5_History_Base_Dataset_20epochs sur 20 epoch en (1294.0385823249817, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 128
+best_epoch: 8
+```
+![Courbes d'apprentissage CNN-LSTM - Dataset original - Essai 2](results/plots\learning_curve_CNN_64_64_64_LSTM_128_Dropout_5_History_Base_Dataset_20epochs_20260111_154332.png)
+
+Avec cette configuration aussi on a de l'verfitting, encore plus tôt que précédemment (on atteint seulement 46%) donc uniquement réduire le nombre de convolutions et de neurones dans la couche LSTM n'est pas suffisant pour limiter l'overfitting.
+
+## Essai 3 - Batch Normalization
+Je vais faire un essai en utilisant de la normalisation par lot (batch normalization) et en réduisant le la taille de l'input de la couche LSTM pour voir si ça améliore les performances.
+
+Le modèle sera le suivant:
+- Couches convolutives: [64, 64, 64] avec batch normalization après les deux premières couches et réductions à 16 features avant la couche LSTM
+- Couche LSTM: 128 neurones
+- Pas de dropout
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+
+Modèle:
+- CNN_64_64_64_LSTM_128_BatchNorm_5_History_Base_Dataset_20epochs
+
+On a 646160 poids entraînables pour un dataset de 360060 (Base) et 2.9 millions de samples (Augmenté).
+
+### Dataset original
+Pour ce dataset je vais faire l'entrainement sur 20 epochs avec early stopping de 5 epochs et un batch size de 128 pour une question d'optimisation du temps d'entrainement.
+```logs
+Recalculing the best DEV: WAcc : 47.16166666666667%
+Fin entrainement CNN_64_64_64_LSTM_128_BatchNorm_5_History_Base_Dataset_20epochs sur 20 epoch en (1769.2870540618896, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 128
+best_epoch: 12
+```
+![Courbes d'apprentissage CNN-LSTM avec Batch Normalization - Dataset original - Essai 3](results/plots\learning_curve_CNN_64_64_64_LSTM_128_BatchNorm_5_History_Base_Dataset_20epochs_20260111_162458.png)
+
+On remarque qu'avec la batch normalization, l'overfitting est réduit par rapport aux essais précédents (courbes loss). Cependant, on atteint seulement 47.16% d'accuracy sur le dev set, ce qui est en dessous des performances des modèles CNN seuls. J'ai décidé donc de modifier mon CNN_LSTM et de le transformer en CNN-LSTM incluant un résidu dans la partie CNN pour voir si ça améliore les performances.
+D'après ce que j'ai compris, l'ajout d'un résidu permet de faciliter l'apprentissage en permettant au modèle de "sauter" certaines couches si elles n'apportent pas d'amélioration. Cela permet aussi de lutter contre le problème de vanishing gradient.
+
+## Essai 4 - CNN-LSTM avec résidu
+Le modèle sera le suivant:
+- Couches convolutives avec résidu: [64, 64, 64] avec batch normalization après les deux premières couches et réductions à 16 features avant la couche LSTM
+- Couche LSTM: 128 neurones
+- Pas de dropout
+- Fonction d'activation: ReLU
+- Learning rate: 0.001
+- Optimizer: Adam
+
+Modèle:
+- CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs
+
+J'ai entrainé ce modèle directement sur le dataset augmenté pour voir si les performances sont bonnes.
+
+On a 692432 poids entraînables pour un dataset de 2.9 millions de samples (Augmenté).
+
+### Dataset augmenté
+Pour cet entrainement, je vais passer à un batch size de 1000 pour optimiser le temps d'entrainement. L'entrainement sera fait sur 20 epochs avec early stopping de 5 epochs.
+
+```logs
+Recalculing the best DEV: WAcc : 51.99%
+Fin entrainement CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs sur 20 epoch en (4718.729903459549, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 1000  
+best_epoch: 20
+```
+![Courbes d'apprentissage CNN-LSTM avec résidu et Batch Normalization - Dataset augmenté - Essai 4](results/plots\learning_curve_CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs_20260111_182042.png)
+
+On peut voir que ce modèle apporte des résultats satisfaisants, tant au niveau accuracy/loss qu'overfitting, mais il y a quand même un plateau qui se créé à partir de la 6ème epoch, ce qui laisse entendre que le modèle a fini d'apprendre ce qu'il peut apprendre. Je pense que mon learning rate fait rater des opportunités d'apprentissage au modèle. Je vais donc faire un nouvel essai en permettant au modèle d'avoir un scheduler divisant le learning rare par 2 toutes les 2 epochs sans amélioration. Pour que le scheduler fonctionne, je vais aussi augmenter le nombre d'epochs à 50 pour laisser le temps au modèle d'apprendre. L'expérience sera faite sur le dataset de base pour économiser du temps de calcul.
+
+## Essai 5 - CNN-LSTM avec résidu + learning rate variable
+Le modèle sera le suivant:
+- Couches convolutives avec résidu: [64, 64, 64] avec batch normalization après les deux premières couches et réductions à 16 features avant la couche LSTM
+- Couche LSTM: 256 neurones
+- Pas de dropout
+- Fonction d'activation: ReLU
+- Learning rate de départ: 0.1 avec scheduler (divise le lr par 2 toutes les 2 epochs sans amélioration)
+- Optimizer: Adam
+
+Modèle:
+- CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_Scheduler_50epochs
+
+On a 1497040 poids entraînables pour un dataset de 360060 (Base).
+
+```logs
+Recalculing the best DEV: WAcc : 45.501666666666665%
+Fin entrainement CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_Scheduler_50epochs sur 19 epoch en (2083.503846645355, 'sc') | Paramètres: Learning rate= 0.001 - Optimizer= Adam - Dropout= 0.2 - Batch Size= 128
+best_epoch: 8
+```
+
+![Courbes d'apprentissage CNN-LSTM avec résidu, Batch Normalization et learning rate variable - Dataset original - Essai 5](results/plots\learning_curve_CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_Scheduler_50epochs_20260111_203309.png)
+
+Le changement du learning rate n'a pas apporté d'amélioration significative, on atteint seulement 45.50% d'accuracy sur le dev set, ce qui est en dessous des performances des modèles CNN seuls. L'overfitting est toujours présent, mais moins prononcé que dans les essais précédents. Je pense que le modèle CNN-LSTM n'est pas adapté pour ce type de données et que les CNN seuls sont plus performants.
+
+### Dataset original
+Pour ce dataset je vais faire l'entrainement sur 50 epochs avec early stopping de 10 epochs et un batch size de 128 pour une question d'optimisation du temps d'entrainement.
+
+```logs
+```
 
 # Entrainement final TODO TODO TODO
 Pour l'entrainement final, j'ai entrainé le modèle TODO optimisé avec données augmentées sur 100 epochs pour voir si je peux encore améliorer les performances. J'ai regroupé les données de test/dev dans le train set augmenté pour avoir plus de données d'entrainement.
@@ -838,3 +1004,8 @@ Lors de l'entrainement, mon GPU est faiblement utilisé (7%). Le CPU lui a des p
 ## Optimizers
 
 ## Augmentation des données
+
+
+
+# TODO
+AJOUTER METRIQUES DE TAUX DE VICTOIRE DANS LES RAPPORTS D'ENTRAINEMENT (prendre comme exemple le modèle MLP optimisé original sans données augmentées)

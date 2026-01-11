@@ -50,8 +50,8 @@ devSet = DataLoader(ds_dev,
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=50
-conf["earlyStopping"]=10
+conf['epoch']=200
+conf["earlyStopping"]=20
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=128
@@ -61,13 +61,15 @@ learning_rates = [0.001]
 optimizers = ["Adam"]
 dropouts = [0.2]
 
+add_scheduler = True
+
 for dropout in dropouts:
     conf['dropout'] = dropout
 
     for optimizer in optimizers:
         for lr in learning_rates:
             
-            model = CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm(conf).to(device)
+            model = CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler(conf).to(device)
             print(model)
 
             n = count_parameters(model)
@@ -83,13 +85,17 @@ for dropout in dropouts:
                 print("Pas d'optimizer trouvé")
                 break
 
+            scheduler = None
+            if add_scheduler:
+                scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(opt, mode='max', factor=0.5, patience=2)
+
             start_time = time.time()
             best_epoch=model.train_all(trainSet,
                                 devSet,
                                 conf['epoch'],
-                                device, opt)
+                                device, opt, scheduler)
                                 
-            print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"), "| Paramètres: Learning rate=", lr, "- Optimizer=", optimizer, "- Dropout=", dropout, "- Batch Size=", dataset_conf['batch_size'])
+            print("Fin entrainement", model.name, "sur", conf['epoch'], "epoch en", (time.time() - start_time, "sc"), "| Paramètres: Learning rate=", lr, "- Optimizer=", optimizer, "- Dropout=", dropout, "- Batch Size=", dataset_conf['batch_size'], scheduler)
             print("best_epoch:", best_epoch)
 # model = torch.load(conf["path_save"] + '/model_2.pt')
 # model.eval()
