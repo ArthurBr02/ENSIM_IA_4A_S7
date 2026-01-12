@@ -23,14 +23,14 @@ len_samples=1
 
 dataset_conf={}  
 # self.filelist : a list of all games for train/dev/test
-dataset_conf["filelist"]="train_generated.txt"
+dataset_conf["filelist"]="train.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
-dataset_conf["path_dataset"]="./generated_dataset/h5/"
+dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=1000
 
 print("Training Dataste ... ")
-ds_train = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
+ds_train = CustomDatasetOne(dataset_conf,load_data_once4all=True)
 trainSet = DataLoader(ds_train, 
                       batch_size=dataset_conf['batch_size'])
 
@@ -43,7 +43,7 @@ dataset_conf["path_dataset"]="./dataset/"
 dataset_conf['batch_size']=1000
 
 print("Development Dataste ... ")
-ds_dev = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
+ds_dev = CustomDatasetOne(dataset_conf,load_data_once4all=True)
 devSet = DataLoader(ds_dev, 
                     batch_size=dataset_conf['batch_size'])
 
@@ -67,7 +67,7 @@ for dropout in dropouts:
     for optimizer in optimizers:
         for lr in learning_rates:
             
-            model = MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data(conf).to(device)
+            model = MLP(conf).to(device)
             print(model)
 
             n = count_parameters(model)

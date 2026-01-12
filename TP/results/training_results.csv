@@ -414,3 +414,8 @@ timestamp,model_name,optimizer,learning_rate,best_epoch,epochs_completed,best_de
 2026-01-11 18:33:14,CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs,Adam,0.01,4,10,0.050083333333333334,3.6468034888635565,1034.04
 2026-01-11 18:45:45,CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs,Adam,0.05,1,7,0.016666666666666666,4.12174367701321,750.7
 2026-01-11 20:33:09,CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_Scheduler_50epochs,Adam,6.25e-05,8,19,0.4550166666666667,1.6943741225992948,2083.5
+2026-01-12 01:00:11,CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_Scheduler_50epochs,Adam,3.125e-05,49,50,0.53966875,1.2919668883085251,13292.25
+2026-01-12 01:53:28,CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler,Adam,2.44140625e-07,61,82,0.5690020833333334,1.1537928407390912,15951.31
+2026-01-12 15:56:53,CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler,Adam,1.220703125e-07,45,66,0.5788270833333333,1.1353004241983096,21691.37
+2026-01-12 16:39:58,MLP,Adam,0.001,19,20,0.1653,4.020486219724019,213.94
+2026-01-12 22:45:03,CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler,Adam,0.0005,29,30,0.5673166666666667,1.1586638617018858,6945.03

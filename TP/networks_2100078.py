@@ -4123,6 +4123,69 @@ class CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentat
     
     def evalulate(self, test_loader, device):
         return evaluate(self, test_loader, device)
+    
+"""
+[64, 128, 256, 512, 1024],     # 3 couches
+"""
+class CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 64, 128, 256, 512."""
+        super(CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler"
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(512, 1024, kernel_size=3, padding=1)
+
+        self.fc = nn.Linear(1024 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv4(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv5(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer, scheduler=None):
+        return train_all(self, train, dev, num_epoch, device, optimizer, scheduler)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
 
 """
 [64, 128, 256],    # 3 couches
@@ -5031,6 +5094,64 @@ class CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20
         self.conf_dropout = conf['dropout']
         
         self.name = "CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler"
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+
+        self.fc = nn.Linear(256 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv4(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer, scheduler=None):
+        return train_all(self, train, dev, num_epoch, device, optimizer, scheduler)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[32, 64, 128, 256],     # 3 couches
+"""
+class CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128, 256."""
+        super(CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final"
         
         self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
         self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)

@@ -21,12 +21,38 @@ def count_parameters(model):
 
 len_samples=1
 
+# dataset_conf={}  
+# # self.filelist : a list of all games for train/dev/test
+# dataset_conf["filelist"]="train_generated.txt"
+# #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
+# dataset_conf["len_samples"]=len_samples
+# dataset_conf["path_dataset"]="./generated_dataset/h5/"
+# dataset_conf['batch_size']=1000
+
+# print("Training Dataste ... ")
+# ds_train = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
+# trainSet = DataLoader(ds_train, 
+#                       batch_size=dataset_conf['batch_size'])
+
+# dataset_conf={}  
+# # self.filelist : a list of all games for train/dev/test
+# dataset_conf["filelist"]="dev.txt"
+# #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
+# dataset_conf["len_samples"]=len_samples
+# dataset_conf["path_dataset"]="./dataset/"
+# dataset_conf['batch_size']=1000
+
+# print("Development Dataste ... ")
+# ds_dev = CustomDatasetOneAugmented(dataset_conf,load_data_once4all=True)
+# devSet = DataLoader(ds_dev, 
+#                     batch_size=dataset_conf['batch_size'])
+
 dataset_conf={}  
 # self.filelist : a list of all games for train/dev/test
-dataset_conf["filelist"]="train_generated.txt"
+dataset_conf["filelist"]="train_final_2.txt"
 #len_samples is 1 for one2one but it can be more than 1 for seq2one modeling
 dataset_conf["len_samples"]=len_samples
-dataset_conf["path_dataset"]="./generated_dataset/h5/"
+dataset_conf["path_dataset"]="./generated_dataset_2/h5/"
 dataset_conf['batch_size']=1000
 
 print("Training Dataste ... ")
@@ -50,8 +76,8 @@ devSet = DataLoader(ds_dev,
 conf={}
 conf["board_size"]=BOARD_SIZE
 conf["path_save"]="save_models"
-conf['epoch']=200
-conf["earlyStopping"]=20
+conf['epoch']=30
+conf["earlyStopping"]=5
 conf["len_inpout_seq"]=len_samples
 conf["LSTM_conf"]={}
 conf["LSTM_conf"]["hidden_dim"]=128

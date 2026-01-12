@@ -649,7 +649,69 @@ class MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_50epochs(nn.Mo
     
     def evalulate(self,test_loader, device):
         return evaluate(self, test_loader, device)
+
+"""
+[512, 256],              # 2 couches
+"""
+class MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data(nn.Module):
+    def __init__(self, conf):
+        """
+        Multi-Layer Perceptron (MLP) model for the Othello game.
+        Architecture: Input(64) -> 512 -> 256 -> Output(64) with Dropout and ReLU
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        
+        super(MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data, self).__init__()
+        
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout=conf['dropout']
+
+        self.name = "MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Data"
+
+        # Define the layers of the MLP: Input -> 512 -> 256 -> Output
+        self.lin1 = nn.Linear(self.board_size*self.board_size, 512)
+        self.lin2 = nn.Linear(512, 256)
+        self.lin3 = nn.Linear(256, self.board_size*self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        """
+        Forward pass of the MLP.
+
+        Parameters:
+        - seq (torch.Tensor): A state of board as Input.
+
+        Returns:
+        - torch.Tensor: Output probabilities.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>2:
+            seq=torch.flatten(seq, start_dim=1)
+        else:
+            seq=torch.flatten(seq, start_dim=0)
+        x = self.lin1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        x = self.lin2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        outp = self.lin3(x)
+
+        # Softmax
+        # outp = F.softmax(outp, dim=1)
+        return outp
     
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+
 """
 [512, 256],              # 2 couches
 """
@@ -855,6 +917,69 @@ class LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epoc
 
         self.board_size=conf["board_size"]
         self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs/"
+        self.earlyStopping=conf["earlyStopping"]
+        self.len_inpout_seq=conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+
+        # Define the layers of the LSTM model: [256]
+        self.lstm = nn.LSTM(self.board_size*self.board_size, 256, batch_first=True)
+        
+        # Using hidden states
+        self.hidden2output = nn.Linear(256*2, self.board_size*self.board_size)
+        
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+
+    def forward(self, seq):
+        """
+        Forward pass of the LSTM model.
+
+        Parameters:
+        - seq (torch.Tensor): A series of borad states (history) as Input sequence.
+
+        Returns:
+        - torch.Tensor: Output probabilities after applying softmax.
+        """
+        seq=np.squeeze(seq)
+        if len(seq.shape)>3:
+            seq=torch.flatten(seq, start_dim=2)
+        else:
+            seq=torch.flatten(seq, start_dim=1)
+
+        lstm_out, (hn, cn) = self.lstm(seq)
+        hn = self.dropout(hn.squeeze(0))
+        cn = self.dropout(cn.squeeze(0))
+        hidden_concat = torch.cat((hn, cn), -1)
+        hidden_concat = F.relu(hidden_concat)  # Activation
+        
+        # Utiliser hidden_concat au lieu de lstm_out
+        outp = self.hidden2output(hidden_concat)
+
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self,test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[256],              # 1 couche
+"""
+class LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data(nn.Module):
+    def __init__(self, conf):
+        """
+        Long Short-Term Memory (LSTM) model for the Othello game.
+        Architecture: [256] - 1 couche with Dropout and ReLU
+
+        Parameters:
+        - conf (dict): Configuration dictionary containing model parameters.
+        """
+        super(LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data, self).__init__()
+        
+        self.name = "LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data"
+
+        self.board_size=conf["board_size"]
+        self.path_save=conf["path_save"]+"_LSTMHiddenState_Dropout_Relu_256_Post_Optimisation_DataAugmentation_20epochs_Generation_Data/"
         self.earlyStopping=conf["earlyStopping"]
         self.len_inpout_seq=conf["len_inpout_seq"]
         self.conf_dropout = conf['dropout']
@@ -3719,6 +3844,350 @@ class CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epoc
         return evaluate(self, test_loader, device)
 
 """
+[32, 64, 128],     # 3 couches
+"""
+class CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128."""
+        super(CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_32_64_128_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_20epochs_Generation_Data"
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.fc = nn.Linear(128 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[32, 64, 128, 256],     # 3 couches
+"""
+class CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128, 256."""
+        super(CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data"
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+
+        self.fc = nn.Linear(256 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv4(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[32, 64, 128, 256],     # 3 couches
+"""
+class CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128, 256."""
+        super(CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm, self).__init__()
+        
+        self.name = "CNN_32_64_128_256_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm"
+
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(32)
+
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(64)
+
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(128)
+
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.bn4 = nn.BatchNorm2d(256)
+
+        self.conv_final = nn.Conv2d(256, 1, kernel_size=1)
+        
+    def forward(self, seq):
+        # Gestion auto des dimensions (Batch, Channel, H, W)
+        if seq.dim() == 3: seq = seq.unsqueeze(1)
+            
+        # Passage dans les couches avec BatchNorm et ReLU
+        seq = F.relu(self.bn1(self.conv1(seq)))
+        seq = F.relu(self.bn2(self.conv2(seq)))
+        seq = F.relu(self.bn3(self.conv3(seq)))
+        seq = F.relu(self.bn4(self.conv4(seq)))
+        
+        # Sortie : on réduit à (Batch, 1, 8, 8)
+        seq = self.conv_final(seq)
+        
+        # On aplatit pour obtenir 64 neurones (les cases du plateau)
+        seq = seq.view(-1, self.board_size * self.board_size)
+        
+        return seq # Logits (à passer dans CrossEntropyLoss)
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[64, 128, 256, 512],     # 3 couches
+"""
+class CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 64, 128, 256, 512."""
+        super(CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm, self).__init__()
+        
+        self.name = "CNN_64_128_256_512_Relu_Optimisation_DataAugmentation_50epochs_Generation_Data_Batch_Norm"
+
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(64)
+
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(128)
+
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.bn3 = nn.BatchNorm2d(256)
+
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
+        self.bn4 = nn.BatchNorm2d(512)
+
+        self.conv_final = nn.Conv2d(512, 1, kernel_size=1)
+        
+    def forward(self, seq):
+        # Gestion auto des dimensions (Batch, Channel, H, W)
+        if seq.dim() == 3: seq = seq.unsqueeze(1)
+            
+        # Passage dans les couches avec BatchNorm et ReLU
+        seq = F.relu(self.bn1(self.conv1(seq)))
+        seq = F.relu(self.bn2(self.conv2(seq)))
+        seq = F.relu(self.bn3(self.conv3(seq)))
+        seq = F.relu(self.bn4(self.conv4(seq)))
+        
+        # Sortie : on réduit à (Batch, 1, 8, 8)
+        seq = self.conv_final(seq)
+        
+        # On aplatit pour obtenir 64 neurones (les cases du plateau)
+        seq = seq.view(-1, self.board_size * self.board_size)
+        
+        return seq # Logits (à passer dans CrossEntropyLoss)
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[64, 128, 256, 512, 1024],     # 3 couches
+"""
+class CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 64, 128, 256, 512."""
+        super(CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data"
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(512, 1024, kernel_size=3, padding=1)
+
+        self.fc = nn.Linear(1024 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv4(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv5(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[64, 128, 256, 512, 1024],     # 3 couches
+"""
+class CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 64, 128, 256, 512."""
+        super(CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_64_128_256_512_1024_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler"
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, padding=1)
+        self.conv5 = nn.Conv2d(512, 1024, kernel_size=3, padding=1)
+
+        self.fc = nn.Linear(1024 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv4(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv5(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer, scheduler=None):
+        return train_all(self, train, dev, num_epoch, device, optimizer, scheduler)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+
+"""
 [64, 128, 256],    # 3 couches
 """
 class CNN_64_128_256_Dropout_Gridsearch_Relu(nn.Module):
@@ -4106,8 +4575,696 @@ class CNN_64_128_256_Dropout_Gridsearch_Tanh(nn.Module):
     def evalulate(self, test_loader, device):
         return evaluate(self, test_loader, device)
 
+class CNN_32_64_128_256_LSTM_256_Dropout_5_History_Base_Dataset_20epochs(nn.Module):
+    def __init__(self, conf):
+        """CNN-LSTM model with 4 convolutional layers: 32, 64, 128, 256. LSTM hidden layer of 256 and 5 input history."""
+        super(CNN_32_64_128_256_LSTM_256_Dropout_5_History_Base_Dataset_20epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
 
-def train_all(self, train, dev, num_epoch, device, optimizer):
+        self.lstm = nn.LSTM(input_size=256 * self.board_size * self.board_size,
+                            hidden_size=256,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(256, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+    
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x = F.relu(self.conv1(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv2(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv3(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv4(x))
+        x = self.dropout(x)
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x = x.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class CNN_32_64_128_256_LSTM_256_Dropout_5_History_Augmented_Dataset_20epochs(nn.Module):
+    def __init__(self, conf):
+        """CNN-LSTM model with 4 convolutional layers: 32, 64, 128, 256. LSTM hidden layer of 256 and 5 input history."""
+        super(CNN_32_64_128_256_LSTM_256_Dropout_5_History_Augmented_Dataset_20epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+
+        self.lstm = nn.LSTM(input_size=256 * self.board_size * self.board_size,
+                            hidden_size=256,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(256, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+    
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x = F.relu(self.conv1(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv2(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv3(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv4(x))
+        x = self.dropout(x)
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x = x.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+class CNN_64_64_64_LSTM_128_Dropout_5_History_Base_Dataset_20epochs(nn.Module):
+    def __init__(self, conf):
+        super(CNN_64_64_64_LSTM_128_Dropout_5_History_Base_Dataset_20epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+
+        self.lstm = nn.LSTM(input_size=64 * self.board_size * self.board_size,
+                            hidden_size=128,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(128, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+    
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x = F.relu(self.conv1(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv2(x))
+        x = self.dropout(x)
+        x = F.relu(self.conv3(x))
+        x = self.dropout(x)
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x = x.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+class CNN_64_64_64_LSTM_128_BatchNorm_5_History_Base_Dataset_20epochs(nn.Module):
+    def __init__(self, conf):
+        super(CNN_64_64_64_LSTM_128_BatchNorm_5_History_Base_Dataset_20epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.norm1 = nn.BatchNorm2d(64)
+
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.norm2 = nn.BatchNorm2d(64)
+
+        self.conv3 = nn.Conv2d(64, 16, kernel_size=3, padding=1)
+
+        self.lstm = nn.LSTM(input_size=16 * self.board_size * self.board_size,
+                            hidden_size=128,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(128, self.board_size * self.board_size)
+    
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x = F.relu(self.norm1(self.conv1(x)))
+        x = F.relu(self.norm2(self.conv2(x)))
+        x = F.relu(self.conv3(x))
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x = x.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+class CNN_64_128_128_LSTM_128_BatchNorm_5_History_Base_Dataset_20epochs(nn.Module):
+    def __init__(self, conf):
+        super(CNN_64_128_128_LSTM_128_BatchNorm_5_History_Base_Dataset_20epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.norm1 = nn.BatchNorm2d(64)
+
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.norm2 = nn.BatchNorm2d(128)
+
+        self.conv3 = nn.Conv2d(128, 16, kernel_size=3, padding=1)
+
+        self.lstm = nn.LSTM(input_size=16 * self.board_size * self.board_size,
+                            hidden_size=128,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(128, self.board_size * self.board_size)
+    
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x1 = F.relu(self.norm1(self.conv1(x)))
+        x2 = F.relu(self.norm2(self.conv2(x1))) # Résidual Connection
+        x3 = F.relu(self.conv3(x2))
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x4 = x3.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x4)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs(nn.Module):
+    def __init__(self, conf):
+        super(CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_20epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.norm1 = nn.BatchNorm2d(64)
+
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.norm2 = nn.BatchNorm2d(64)
+
+        self.conv3 = nn.Conv2d(64, 16, kernel_size=3, padding=1)
+
+        self.lstm = nn.LSTM(input_size=16 * self.board_size * self.board_size,
+                            hidden_size=128,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(128, self.board_size * self.board_size)    
+
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x1 = F.relu(self.norm1(self.conv1(x)))
+        x2 = F.relu(self.norm2(self.conv2(x1)) + x1) # Résidual Connection
+        x3 = F.relu(self.conv3(x2))
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x4 = x3.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x4)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+class CNN_128_128_128_LSTM_Res_256_BatchNorm_5_History_Base_Dataset_20epochs(nn.Module):
+    def __init__(self, conf):
+        super(CNN_128_128_128_LSTM_Res_256_BatchNorm_5_History_Base_Dataset_20epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 128, kernel_size=3, padding=1)
+        self.norm1 = nn.BatchNorm2d(128)
+
+        self.conv2 = nn.Conv2d(128, 128, kernel_size=3, padding=1)
+        self.norm2 = nn.BatchNorm2d(128)
+        self.conv3 = nn.Conv2d(128, 16, kernel_size=3, padding=1)
+
+        self.lstm = nn.LSTM(input_size=16 * self.board_size * self.board_size,
+                            hidden_size=256,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(256, self.board_size * self.board_size)    
+        
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x1 = F.relu(self.norm1(self.conv1(x)))
+        x2 = F.relu(self.norm2(self.conv2(x1)) + x1) # Résidual Connection
+        x3 = F.relu(self.conv3(x2))
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x4 = x3.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x4)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+class CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_Scheduler_50epochs(nn.Module):
+    def __init__(self, conf):
+        super(CNN_64_64_64_LSTM_Res_128_BatchNorm_5_History_Base_Dataset_Scheduler_50epochs, self).__init__()
+        
+        self.name = self.__class__.__name__
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + f"_{self.name}/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.norm1 = nn.BatchNorm2d(64)
+
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, padding=1)
+        self.norm2 = nn.BatchNorm2d(64)
+        self.conv3 = nn.Conv2d(64, 16, kernel_size=3, padding=1)
+
+        self.norm3 = nn.BatchNorm2d(16) # Ajout d'une normalisation 1D après le CNN pour stabiliser les entrées du LSTM
+
+        self.lstm = nn.LSTM(input_size=16 * self.board_size * self.board_size,
+                            hidden_size=128,
+                            num_layers=1,
+                            batch_first=True)
+
+        self.fc = nn.Linear(128, self.board_size * self.board_size)    
+        
+    def forward(self, seq):
+        # seq shape attendue: (Batch, Sequence, 1, 8, 8)
+        # print(seq.size())
+        
+        # If seq has 4 dimensions (Batch, Sequence, H, W), add channel dimension
+        if len(seq.size()) == 4:
+            seq = seq.unsqueeze(2)  # Add channel dimension: (Batch, Sequence, 1, H, W)
+        
+        batch_size, seq_len, C, H, W = seq.size()
+        
+        # On replie le Batch et la Séquence pour passer dans le CNN d'un coup
+        x = seq.view(batch_size * seq_len, C, H, W)
+        
+        x1 = F.relu(self.norm1(self.conv1(x)))
+        x2 = F.relu(self.norm2(self.conv2(x1)) + x1) # Résidual Connection
+        x3 = F.relu(self.norm3(self.conv3(x2)))
+        
+        # On déplie pour retrouver la structure temporelle avant le LSTM
+        # x.view(batch_size, seq_len, features)
+        x4 = x3.view(batch_size, seq_len, -1)
+        
+        lstm_out, _ = self.lstm(x4)
+        
+        # On prend le dernier état (le coup le plus récent)
+        last_step = lstm_out[:, -1, :]
+        
+        outp = self.fc(last_step)
+        return outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer, scheduler=None):
+        return train_all(self, train, dev, num_epoch, device, optimizer, scheduler)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[32, 64, 128, 256],     # 3 couches
+"""
+class CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128, 256."""
+        super(CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler"
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+
+        self.fc = nn.Linear(256 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv4(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer, scheduler=None):
+        return train_all(self, train, dev, num_epoch, device, optimizer, scheduler)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+    
+"""
+[32, 64, 128, 256],     # 3 couches
+"""
+class CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final(nn.Module):
+    def __init__(self, conf):
+        """CNN model with 3 convolutional layers: 32, 64, 128, 256."""
+        super(CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final, self).__init__()
+        
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        self.name = "CNN_32_64_128_256_Dropout_Gridsearch_Relu_Optimisation_DataAugmentation_200epochs_Generation_Data_Scheduler_Entrainement_Final"
+        
+        self.conv1 = nn.Conv2d(1, 32, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.conv4 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+
+        self.fc = nn.Linear(256 * self.board_size * self.board_size, self.board_size * self.board_size)
+        self.dropout = nn.Dropout(p=self.conf_dropout)
+        
+    def forward(self, seq):
+        seq = np.squeeze(seq)
+        if len(seq.shape) == 2:
+            seq = seq.unsqueeze(0).unsqueeze(0)
+        elif len(seq.shape) == 3:
+            seq = seq.unsqueeze(1)
+        
+        x = self.conv1(seq)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv2(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = self.conv3(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+
+        x = self.conv4(x)
+        x = F.relu(x)
+        x = self.dropout(x)
+        
+        x = x.view(x.size(0), -1)
+        outp = self.fc(x)
+        
+        return outp.squeeze() if outp.size(0) == 1 else outp
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer, scheduler=None):
+        return train_all(self, train, dev, num_epoch, device, optimizer, scheduler)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+
+class ResBlock(nn.Module):
+    def __init__(self, in_channels):
+        super(ResBlock, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
+        self.bn1 = nn.BatchNorm2d(in_channels)
+        self.conv2 = nn.Conv2d(in_channels, in_channels, kernel_size=3, padding=1)
+        self.bn2 = nn.BatchNorm2d(in_channels)
+
+    def forward(self, x):
+        residual = x
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.bn2(self.conv2(out))
+        out += residual # La magie du ResNet est ici
+        return F.relu(out)
+
+class CNN_ResNet_Optimized(nn.Module):
+    def __init__(self, conf):
+        super(CNN_ResNet_Optimized, self).__init__()
+        
+        self.name = "CNN_ResNet_Optimized"
+
+        self.board_size = conf["board_size"]
+        self.path_save = conf["path_save"] + "_CNN_ResNet_Optimized/"
+        self.earlyStopping = conf["earlyStopping"]
+        self.len_inpout_seq = conf["len_inpout_seq"]
+        self.conf_dropout = conf['dropout']
+        
+        # 1. Entrée : Passage de 1 canal à 128
+        self.start_conv = nn.Sequential(
+            nn.Conv2d(1, 128, kernel_size=3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU()
+        )
+        
+        # 2. Corps du réseau : On empile des blocs résiduels
+        # 4 blocs suffisent pour commencer et surpasser ton ancien modèle
+        self.res_block1 = ResBlock(128)
+        self.res_block2 = ResBlock(128)
+        self.res_block3 = ResBlock(128)
+        self.res_block4 = ResBlock(128)
+
+        # 3. Sortie : Une seule tête pour rester compatible avec ton train_all
+        self.final_conv = nn.Conv2d(128, 1, kernel_size=1) 
+        self.fc = nn.Linear(self.board_size * self.board_size, self.board_size * self.board_size)
+
+    def forward(self, x):
+        # Gestion des dimensions comme dans ton code original
+        if x.dim() == 3: x = x.unsqueeze(1)
+        
+        # Tronc résiduel
+        x = self.start_conv(x)
+        x = self.res_block1(x)
+        x = self.res_block2(x)
+        x = self.res_block3(x)
+        x = self.res_block4(x)
+        
+        # Extraction du coup (Sortie de taille 64)
+        x = self.final_conv(x) # (Batch, 1, 8, 8)
+        x = x.view(x.size(0), -1) # Flatten vers 64
+        outp = self.fc(x)
+        
+        return outp # Retourne un seul tenseur, compatible avec train_all
+    
+    def train_all(self, train, dev, num_epoch, device, optimizer):
+        return train_all(self, train, dev, num_epoch, device, optimizer)
+    
+    def evalulate(self, test_loader, device):
+        return evaluate(self, test_loader, device)
+
+def train_all(self, train, dev, num_epoch, device, optimizer, scheduler=None):
     if not os.path.exists(f"{self.path_save}"):
         os.mkdir(f"{self.path_save}")
     best_dev = 0.0
@@ -4181,6 +5338,12 @@ def train_all(self, train, dev, num_epoch, device, optimizer):
             notchange+=1
             if notchange>self.earlyStopping:
                 break
+        if scheduler is not None:
+            scheduler.step(acc_dev)
+            print("New LR:",scheduler.get_last_lr())
+            # Maj du modèle pour continuer l'entraînement
+            
+            
             
         self.train()
         

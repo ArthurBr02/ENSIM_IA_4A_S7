@@ -1,0 +1,2 @@
+save_models_MLPmodel_19_1768232386.8054268_0.1653prct.pt: 6 points
+save_models_MLP_512_256_Dropout_Relu_Post_Optimisation_DataAugmentation_20epochs_Generation_Datamodel_20_1768008977.7114143_0.4340541666666667prct.pt: 4 points

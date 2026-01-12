@@ -9,10 +9,10 @@ from game import input_seq_generator, find_best_move, apply_flip
 import torch
 from utile import get_legal_moves,initialze_board
 
-NB_PARTIES = 200
+NB_PARTIES = 4000
 
-model_1 ='../best_models/MLP_optimise_model_48_1767919116.7898524_0.46385prct.pt'
-model_2 = '../best_models/CNN_optimise_model_20_1767995697.4717474_0.5165333333333333prct.pt'
+model_1 ='../best_models/CNN_ResNet_model_10_1768064304.1210783_0.55496875prct.pt'
+model_2 = '../best_models/CNN_LSTM_Res_model_20_1768152031.360161_0.5198916666666666prct.pt'
 
 def get_empty_board():
     return np.zeros((8,8))
@@ -27,7 +27,7 @@ def create_h5_file(file_path, boards, moves, key_name='data'):
         h5f.create_dataset(key_name, data=stacked, dtype=np.int8)
 
 def add_file_to_generated_dataset(filename):
-    with open('../train_generated.txt', 'a') as f:
+    with open('../train_final.txt', 'a') as f:
         f.write(filename + '\n')
 
 def export_game_to_json(boards, moves, key, outpath):
@@ -198,8 +198,8 @@ if __name__ == "__main__":
         #     i -= 1
         #     continue
 
-        create_h5_file(f'../generated_dataset/h5/{name}.h5', boards, moves, name)
-        export_game_to_json(boards, moves, name, f'../generated_dataset/json/{name}.json')
+        create_h5_file(f'../generated_dataset_2/h5/{name}.h5', boards, moves, name)
+        export_game_to_json(boards, moves, name, f'../generated_dataset_2/json/{name}.json')
         add_file_to_generated_dataset(f'{name}.h5')
         print(len(moves))
         print(len(boards))
